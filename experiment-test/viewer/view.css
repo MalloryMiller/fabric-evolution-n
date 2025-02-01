@@ -1,0 +1,83 @@
+body {
+    margin:0px;
+    font-size:x-large;
+}
+
+select {
+    font-size: large;
+    padding: 5px;
+    margin-top: 10px;
+    text-align: center;
+    font-family: "Times New Roman";
+}
+
+.number-select {
+    font-size: large;
+    padding: 5px;
+    margin-top: 10px;
+    text-align: center;
+    width: 3em;
+    font-family: "Times New Roman";
+}
+
+
+#holder {
+    height: 100vh;
+    width: 100vw;
+    margin: 0px;
+    padding: 0px;
+}
+
+
+#settings {
+    position: fixed;
+    height: 100%;
+    background-color: rgba(228, 227, 226, 0.753);
+    width: 325px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px)!important;
+    overflow: auto;
+
+    padding-top: 10vh;
+    padding-bottom: 10vh;
+    text-align: center;
+}
+
+#image {
+    margin: 0px;
+    padding: 0px;
+}
+
+#chart {
+    height: 100%;
+    margin:0px;
+    padding-left: 325px;
+}
+
+
+.setting-title {
+    width: 100%;
+}
+
+.option {
+    margin-bottom: 2em;
+}
+
+.slider {
+
+    width: 75%;
+    height:30px;
+    border-radius: 30px;
+}
+
+.parallel {
+    background: linear-gradient(90deg, rgba(224,81,81,1) 0%, rgba(255,255,255,0) 50%, rgba(92,245,127,1) 100%);
+}
+.linear {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgb(92, 245, 138) 100%);
+}
+
+.disabled {
+    opacity: .5;
+}
+

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Fabric Evolution Viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="view.css">
+<link rel="icon" type="image/x-icon" href="view.ico">
+<style>
+</style>
+<script src="view.js"></script>
+<body  onload="setup()">
+
+
+<div id="holder">
+
+    <div id="settings">
+        <div class = "option">
+            <div class="setting-title">Experiment Type</div>
+            <select id="exp" oninput="set_ranges()">
+                <option value="cc">Confined compression (CC)</option>
+                <option value="uc">Uniaxial compression (UC)</option>
+                <option value="ue">Uniaxial extension (UE)</option>
+                <option value="ss">Simple shear (SS)</option>
+            </select>
+            <br />
+        </div>
+
+        <div class = "option">
+            <div class="setting-title">Target <span id="target-units"></span>: <input type="number" id="tar-t" class="number-select" onchange="update_from_text()"> </input> </div>
+            <input class="slider parallel" type = "range" id="tar" oninput="update()"/>
+            <br />
+        </div>
+
+        <div class = "option">
+            <div class="setting-title"><input type = "checkbox" id="gam-on"  onchange="update()"/> 
+                Rate of DDRX: <input type="number" id="gam-t" class="number-select"  onchange="update_from_text()"/> 
+            </div>
+            <input class="slider linear" type = "range" id="gam" oninput="update()"/>
+            <br />
+        </div>
+
+        <div class = "option">
+            <div class="setting-title"><input type = "checkbox" id="lam" oninput="update()"/> Rate of CDRX: <span id="lamd-label">0.15</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="image">
+        <img id="chart" />
+    </div>
+</div>
+
+</body>
+</html>
