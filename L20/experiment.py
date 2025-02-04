@@ -14,8 +14,7 @@ FS = sfplt.setfont_tex()
 
 
 
-GAMMA_FORMULA = [0.21, 0.001] # [0] + [1]temp
-LAMBDA_FORMULA = [0.176, 0.609] # [0] + [1]temp
+GAMMA_FORMULA = [ 0.188, 5.94] # [0] + [1]temp
 
 
 def apply_formula(formula, x):
@@ -41,10 +40,9 @@ class Experiment():
         self.Gamma = None
         self.lamd = None
         if temp != None:
-            self.Gamma = round(apply_formula(GAMMA_FORMULA, self.temp), 1)
+            self.Gamma = round(apply_formula(GAMMA_FORMULA, self.temp), 3)
             if lambd != None:
-                self.lamd = round(apply_formula(LAMBDA_FORMULA, self.temp), 1)
-        print(f"GAMMA: {self.Gamma}, LAMD: {self.lamd}")
+                self.lamd = 0.15
 
 
         ii_to_axis  = lambda ij: 0 if (ij=='xx') else (1 if (ij=='yy') else 2)
@@ -55,7 +53,7 @@ class Experiment():
 
         if self.exptype == 'ue': # Uniaxial extension
             self.mod = dict(type='ps', T=-1, r=0,  axis=ii_to_axis(ijstr))
-            self.strain_target = 3
+            self.strain_target = 5
 
         if self.exptype == 'uc': # Uniaxial compression
             self.mod = dict(type='ps', T=1, r=0,  axis=ii_to_axis(ijstr))
@@ -101,9 +99,14 @@ class Experiment():
     
 
 
-    def generate_file(self):
+    def generate_file(self, remake = False):
 
         self.init_file_name()
+
+
+        if not remake and os.path.isfile(self.fname):
+            print(self.fname, "already exists. Run with remake=True to overwrite.")
+            return False
 
         
         #----------------------
@@ -200,12 +203,22 @@ class Experiment():
         f_eigvals[:,:] = eigvals
         ncfile.close(); 
 
-        return self.fname
+        return True
     
 
 
-    def load_solution(self, specific_steps = None):
-        expname = self.fname
+    def load_solution(self, specific_steps = None, remake = False):
+        self.init_file_name()
+
+
+        if not os.path.isfile(self.fname):
+            print(self.fname, "does not exist. Generate it using generate_file first.")
+            return
+
+        if os.path.isdir("solutions/frames/{}".format(self.fname[10:-3])) and not remake:
+            print(self.fname, "already has an image folder. Run with remake=True to overwrite.")
+            return
+
 
         fh = Dataset('%s'%(self.fname), mode='r')
         loadvar = lambda field: np.array(fh.variables[field][:])
@@ -366,19 +379,24 @@ class Experiment():
             #----------------------
             
             props = dict(boxstyle='square', facecolor='wheat', alpha=0.5)
-            textstr1 = '\n'.join(( r'"%s"'%(expname.replace('_', '\_')), r'$L = %i$'%(L) ))
+            textstr1 = '\n'.join(( r'"%s"'%(self.fname.replace('_', '\_')), r'$L = %i$'%(L) ))
             ax_eigvals.text(-1.6, -0.1, textstr1, transform=ax_eigvals.transAxes, fontsize=FS, bbox=props)
 
             #----------------------
             # Save figure
             #----------------------
             
-            os.makedirs("solutions/frames/{}".format(expname[10:-3]), exist_ok=True)
-            fout = 'solutions/frames/%s/%i.png'%(expname[10:-3], tt+1)
+            os.makedirs("solutions/frames/{}".format(self.fname[10:-3]), exist_ok=True)
+            fout = 'solutions/frames/%s/%f.png'%(self.fname[10:-3], self.get_pressure(tt))
             print('Saving %s'%(fout))
             plt.savefig(fout, dpi=dpi)
+            plt.close('all')
 
 
+
+    def get_pressure(self, n):
+        amount = float(self.strain_target) / float(self.timesteps)
+        return float(n + 1) * amount
 
 
 
@@ -388,6 +406,8 @@ def reduce(n):
     If the given number is whole, returns as an integer with no floating point. Otherwise returns unchanged
     '''
     if (n%1 == 0):
+        if (n == -0):
+            return 0 # it was returning -0 sometimes???
         return int(n)
     else:
         return n

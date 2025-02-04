@@ -33,14 +33,14 @@
 
         <div class = "option">
             <div class="setting-title"><input type = "checkbox" id="gam-on"  onchange="update()"/> 
-                Rate of DDRX: <input type="number" id="gam-t" class="number-select"  onchange="update_from_text()"/> 
+                Temperature (C): <input type="number" id="gam-t" class="number-select"  onchange="update_from_text()"/> 
             </div>
             <input class="slider linear" type = "range" id="gam" oninput="update()"/>
             <br />
         </div>
 
         <div class = "option">
-            <div class="setting-title"><input type = "checkbox" id="lam" oninput="update()"/> Rate of CDRX: <span id="lamd-label">0.15</span>
+            <div class="setting-title"><input type = "checkbox" id="lam" oninput="update()"/> <span id="lamd-label">CDRX </span>
             </div>
         </div>
 
