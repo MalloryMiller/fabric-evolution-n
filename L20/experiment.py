@@ -87,7 +87,7 @@ class Experiment():
 
     def init_file_name(self):
         folders = f'{self.exptype}'
-        if self.Gamma != None:
+        if self.Gamma and self.temp:
             folders += f'/temp{reduce(self.temp)}'
         if self.lamd != None:
             folders += f'/lam'

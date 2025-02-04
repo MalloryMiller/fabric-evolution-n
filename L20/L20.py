@@ -6,18 +6,18 @@ TIMESTEPS = 1000
 IMAGE_COUNT = 10
 IMAGES = range(0, TIMESTEPS, round(TIMESTEPS/IMAGE_COUNT))
 
-TEMPS = [None]
+TEMPS = [False]
 for x in range(-30, -16, 2):
     TEMPS.append(x)
 
 EXP_TYPES = [ "cc", "ue", "uc", "ss"]
-LAMS = [None, True]
+LAMS = [False, True]
 L = 20
 
 
 
 def main(action):
-    for exp in ['ss']:
+    for exp in EXP_TYPES:
         for tem in TEMPS:
             for la in LAMS:
         
@@ -33,4 +33,4 @@ def create_images(experiment):
     experiment.load_solution(IMAGES)
 
 
-main(create_ncs)
+main(create_images)
