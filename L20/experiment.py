@@ -67,6 +67,7 @@ class Experiment():
             self.mod = dict(type='ss', T=1, plane=ij_to_plane(ijstr))
             self.strain_target = 70 # in degrees
             
+            
         if self.exptype == 'rr': # Ridgid rotation
             self.mod = dict(type='rr', T=1, plane=ij_to_plane(ijstr))
             self.strain_target = 90 # in degrees
@@ -143,7 +144,7 @@ class Experiment():
             c = nlm[tt,:]
             
             m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')
+            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')  # TODO shear
 
             # Linear (n'=1) mixed Taylor--Sachs enhancements            
             Eij_lin[tt,:]  = sf.Eij_tranisotropic(c, m1[tt,:],m2[tt,:],m3[tt,:], Eij_grain_lin, alpha_lin, n_grain_lin)
@@ -268,6 +269,7 @@ class Experiment():
             ax.plot([0, -v[0]],[0, -v[1]],[0,-v[2]], color=color, ls=ls, lw=lw)
 
         for tt in tsteps:
+            print(tt)
 
             #----------------------
             # Figure setup
@@ -287,7 +289,7 @@ class Experiment():
             ax_ODF.set_global() # be sure to show entire S^2
                         
             #----------------------
-            # ODF
+            # ODF (orb)
             #----------------------
 
             ax = ax_ODF
@@ -295,25 +297,31 @@ class Experiment():
             sfplt.plotcoordaxes(ax, geo, axislabels='vuxi')
 
             #----------------------
-            # Eigenvalues
+            # Eigenvalues (top right)
             #----------------------
 
             ax_eigvals.plot([tt,tt],[0,1],':k', lw=2)
             
             steps = np.arange(len(eigvals[:,0]))
+            steps = self.get_pressure(steps)
             ax_eigvals.plot(steps,eigvals[:,0], '-', c=sfplt.c_red,   label='$a_{1}$', lw=lw0)
             ax_eigvals.plot(steps,eigvals[:,1], '-', c=sfplt.c_green, label='$a_{2}$', lw=lw1)
             ax_eigvals.plot(steps,eigvals[:,2], '-', c=sfplt.c_blue,  label='$a_{3}$', lw=lw2)
             
             ax_eigvals.set_ylim([0,1])
-            ax_eigvals.set_xlim([0, Nt+1])
-            ax_eigvals.set_xlabel('time step')
+            ax_eigvals.set_xlim([0, self.get_pressure(Nt+1)])
+            
+            if self.exptype == "ss":
+                ax_eigvals.set_xlabel('Target Angle')
+            else:
+                ax_eigvals.set_xlabel('Target Change')
+
             ax_eigvals.set_ylabel('$a_{i}$')
             ax_eigvals.grid()              
             ax_eigvals.legend(handlelength=1, ncol=1, labelspacing=0.3, fancybox=False, loc=2)
                     
             #----------------------
-            # Principal frame
+            # Principal frame (top middle)
             #----------------------
 
             ax_mi.view_init(elev=90-inclination, azim=rotation) # same as ODF plot
@@ -334,13 +342,14 @@ class Experiment():
             ax_mi.legend(handlelength=1, loc=1, bbox_to_anchor=(1.17,1), fancybox=False)
 
             #----------------------
-            # Enhancement factors
+            # Enhancement factors (bottom charts)
             #----------------------
             
             lblm = lambda ii,jj: '$E_{m_%i m_%i}$'%(ii+1,jj+1)
             lblp = lambda ii,jj: '$E_{p_%i p_%i}$'%(ii+1,jj+1)
 
             def plot_enhancements(ax, Eij, Epij):
+
                 
                 ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
                 ax.semilogy(steps, Eij[:,1], '-', c=sfplt.c_green, label=lblm(1,1), lw=lw1)
@@ -354,12 +363,17 @@ class Experiment():
                 ax.semilogy(steps, Epij[:,5], '-', c=sfplt.c_gray, label=lblp(0,1), lw=lw2) 
                 ax.semilogy(steps, Eratio, '--', c=sfplt.c_gray, label=lblm(0,1)+'/'+lblp(0,1), lw=lw2)
 
-                xlims=[0, Nt+1]
+                xlims=[0, self.get_pressure(Nt+1)]
                 ax.semilogy(xlims, [2.5,2.5], '--k', lw=1) 
                 ax.semilogy(xlims, [4.375,4.375], '--k', lw=1)
                 ax.set_xlim(xlims)
                 ax.set_ylim([np.amin([1e-1, np.amin(Eij[:]), np.amin(Epij[:])]), np.amax([1e+1, np.amax(Eij[:]), np.amax(Epij[:]), np.amax(Eratio)])])
-                ax.set_xlabel('time step')
+                
+                if self.exptype == "ss":
+                    ax.set_xlabel('Target Angle')
+                else:
+                    ax.set_xlabel('Target Change')
+                    
                 ax.set_ylabel('$E_{vw}$')
                 ax.grid()
             
@@ -396,7 +410,7 @@ class Experiment():
 
     def get_pressure(self, n):
         amount = float(self.strain_target) / float(self.timesteps)
-        return float(n + 1) * amount
+        return n * amount
 
 
 

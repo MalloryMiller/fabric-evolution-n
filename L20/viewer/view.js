@@ -2,7 +2,7 @@ let base_file = "../solutions/frames/"
 
 let target_frame = ".png"
 
-let TEMP_RANGE = [-30.0, -18.0];
+let TEMP_RANGE = [-30.0, 0];
 let TEMP_STEPS = 2.0;
 
 

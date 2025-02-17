@@ -1,13 +1,13 @@
 from experiment import Experiment 
 
 
-TIMESTEPS = 1000
+TIMESTEPS = 1501
 
 IMAGE_COUNT = 10
 IMAGES = range(0, TIMESTEPS, round(TIMESTEPS/IMAGE_COUNT))
 
 TEMPS = [False]
-for x in range(-30, -16, 2):
+for x in range(-30, 2, 2):
     TEMPS.append(x)
 
 EXP_TYPES = [ "cc", "ue", "uc", "ss"]
@@ -20,8 +20,12 @@ def main(action):
     for exp in EXP_TYPES:
         for tem in TEMPS:
             for la in LAMS:
-        
-                e1 = Experiment(exp, "zz", temp = tem, lambd=la, truncation=L, timesteps=TIMESTEPS) 
+                
+                if exp != "ss" :
+                    e1 = Experiment(exp, "zz", temp = tem, lambd=la, truncation=L, timesteps=TIMESTEPS) 
+                else:
+                    e1 = Experiment(exp, "xz", temp = tem, lambd=la, truncation=L, timesteps=TIMESTEPS) 
+
                 print(f"GAMMA: {e1.Gamma}, LAMD: {e1.lamd}, TEMP: {e1.temp}, EXP: {e1.exptype}")
                 action(e1)
 
@@ -33,4 +37,5 @@ def create_images(experiment):
     experiment.load_solution(IMAGES)
 
 
+#main(create_ncs)
 main(create_images)
