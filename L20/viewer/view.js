@@ -1,8 +1,8 @@
-let base_file = "../solutions/frames/"
+let base_file = "../"
 
 let target_frame = ".png"
 
-let TEMP_RANGE = [-30.0, 0];
+let TEMP_RANGE = [-30.0, -2];
 let TEMP_STEPS = 2.0;
 
 
@@ -10,17 +10,17 @@ let L = "L20"
 
 
 let TAR_RANGES = {
-    "cc": [-0.882980, -0.000980],
-    "uc": [-0.882980, -0.000980],
-    "ue": [0.005, 4.505],
-    "ss": [0.07, 63.07],
+    "cc": [-1, -0.000],
+    "uc": [-1, -0.000],
+    "ue": [0, 5],
+    "ss": [0, 70],
 }
 
 let TAR_STEPS = {
-    "cc": 0.098,
-    "uc": .098,
-    "ue": .5,
-    "ss": 7,
+    "cc": 0.2,
+    "uc": 0.2,
+    "ue": 1,
+    "ss": 14,
 }
 
 
@@ -83,9 +83,27 @@ function update_from_text() {
 function update() {    
     document.getElementById("gam-t").value = document.getElementById("gam").value;
     document.getElementById("tar-t").value = document.getElementById("tar").value;
+    settings = ""
+
+    if (document.getElementById("corrected").checked) {
+        settings += "solutions-vertical/";
+        document.getElementById("corrected-label").setAttribute("class", "")
+    } else {
+        settings += "solutions/";
+        document.getElementById("corrected-label").setAttribute("class", "disabled")
+    }
+    
+    if (document.getElementById("ver").checked) {
+        settings += "frames-isolated/";
+        document.getElementById("ver-label").setAttribute("class", "")
+    } else {
+        settings += "frames/";
+        document.getElementById("ver-label").setAttribute("class", "disabled")
+    }
 
 
-    settings = document.getElementById("exp").value
+
+    settings += document.getElementById("exp").value
     if (document.getElementById("gam-on").checked) {
         settings += "/temp" + document.getElementById("gam").value;
         document.getElementById("gam").disabled = false;
@@ -96,17 +114,9 @@ function update() {
     }
 
     
-    
-    
-    if (document.getElementById("lam").checked) {
-        settings += "/lam";
-        document.getElementById("lamd-label").setAttribute("class", "")
-    } else {
-        document.getElementById("lamd-label").setAttribute("class", "disabled")
-    }
 
-    settings += "/" + L + "/"
-    if (Number(document.getElementById("tar").value) == 0)     settings += "-";
+
+    settings += "/lam/" + L + "/"
     settings += Number(document.getElementById("tar").value).toFixed(6);
 
     console.log(base_file + settings + target_frame);
