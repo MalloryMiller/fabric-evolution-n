@@ -146,7 +146,7 @@ class Experiment():
             #c[:] = sf.rotate_nlm(sf.rotate_nlm(c[:], -np.pi/3, 0), 0 ,0)
             
             m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')  # TODO shear
+            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')
             
 
             if (rectify):

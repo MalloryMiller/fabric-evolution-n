@@ -87,6 +87,7 @@ function update() {
 
     if (document.getElementById("corrected").checked) {
         settings += "solutions-vertical/";
+        document.getElementById("gam-on").checked = true;
         document.getElementById("corrected-label").setAttribute("class", "")
     } else {
         settings += "solutions-default/";
@@ -95,6 +96,11 @@ function update() {
     
     if (document.getElementById("ver").checked) {
         settings += "frames-isolated/";
+        if (!document.getElementById("corrected").checked && document.getElementById("exp").value == "ss") {
+            document.getElementById("corrected").checked = true;
+            update();
+            return;
+        }
         document.getElementById("ver-label").setAttribute("class", "")
     } else {
         settings += "frames-all/";
