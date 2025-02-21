@@ -2,7 +2,7 @@ let base_file = "../"
 
 let target_frame = ".png"
 
-let TEMP_RANGE = [-30.0, -2];
+let TEMP_RANGE = [-30.0, 0];
 let TEMP_STEPS = 2.0;
 
 
@@ -10,17 +10,17 @@ let L = "L20"
 
 
 let TAR_RANGES = {
-    "cc": [-1, -0.000],
-    "uc": [-1, -0.000],
-    "ue": [0, 5],
-    "ss": [0, 70],
+    "cc": [-0.975, -0.000],
+    "uc": [-0.975, -0.000],
+    "ue": [0, 4.995],
+    "ss": [0, 69.96],
 }
 
 let TAR_STEPS = {
-    "cc": 0.2,
-    "uc": 0.2,
-    "ue": 1,
-    "ss": 14,
+    "cc": 0.195,
+    "uc": 0.195,
+    "ue": 0.999,
+    "ss": 13.992,
 }
 
 
@@ -89,7 +89,7 @@ function update() {
         settings += "solutions-vertical/";
         document.getElementById("corrected-label").setAttribute("class", "")
     } else {
-        settings += "solutions/";
+        settings += "solutions-default/";
         document.getElementById("corrected-label").setAttribute("class", "disabled")
     }
     
@@ -97,7 +97,7 @@ function update() {
         settings += "frames-isolated/";
         document.getElementById("ver-label").setAttribute("class", "")
     } else {
-        settings += "frames/";
+        settings += "frames-all/";
         document.getElementById("ver-label").setAttribute("class", "disabled")
     }
 

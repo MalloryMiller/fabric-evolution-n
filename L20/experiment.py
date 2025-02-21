@@ -89,7 +89,7 @@ class Experiment():
 
     def init_file_name(self):
         folders = f'{self.exptype}'
-        if self.Gamma and self.temp:
+        if self.Gamma and self.temp != None:
             folders += f'/temp{reduce(self.temp)}'
         if self.lamd != None:
             folders += f'/lam'
@@ -427,15 +427,17 @@ class Experiment():
             #----------------------
             
             os.makedirs("solutions/frames/{}".format(self.fname[10:-3]), exist_ok=True)
-            fout = 'solutions/frames/%s/%f.png'%(self.fname[10:-3], reduce(self.get_pressure(tt)))
+            fout = 'solutions/frames/%s/%f.png'%(self.fname[10:-3], reduce(self.get_pressure(tt, True)))
             print('Saving %s'%(fout))
             plt.savefig(fout, dpi=dpi)
             plt.close('all')
 
 
 
-    def get_pressure(self, n):
+    def get_pressure(self, n, naming = False):
         amount = float(self.strain_target) / float(self.timesteps)
+        if naming:
+            amount = reduce(amount)
         return n * amount
 
 
@@ -448,12 +450,11 @@ def reduce(n):
     if (n == 0):
         return 0 # it was returning -0 sometimes???
     else:
-        return round(n, 1)
+        return round(n, 5)
     
 
 
 def angle_snap(e1, e2, e3):
-    print(e1, e2, e3)
     a = [1,0,0] #top
     b = [-0,1,0]
     c = [0,0,1]

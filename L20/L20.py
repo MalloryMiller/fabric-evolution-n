@@ -6,7 +6,7 @@ TIMESTEPS = 1501
 IMAGE_COUNT = 5
 IMAGES = range(0, TIMESTEPS, round(TIMESTEPS/IMAGE_COUNT))
 
-TEMPS = [False]
+TEMPS = []
 for x in range(-30, 2, 2):
     TEMPS.append(x)
 
@@ -32,12 +32,17 @@ def main(action, exptypes = EXP_TYPES, temps = TEMPS, lams = LAMS):
 
 
 def create_ncs(experiment):
-    experiment.generate_file(remake=False)
+    experiment.generate_file(remake=False, rectify = True)
+
+def create_isolated_images(experiment):
+    experiment.load_solution(IMAGES, isolate=True, remake = True)
 
 def create_images(experiment):
-    experiment.load_solution(IMAGES, isolate=False)
+    experiment.load_solution(IMAGES, isolate=False, remake = True)
 
 
 
-main(create_ncs, EXP_TYPES, TEMPS, [True])
-#main(create_images, EXP_TYPES, TEMPS, [True])
+
+
+#main(create_ncs, EXP_TYPES, TEMPS, [True])
+main(create_images, EXP_TYPES, [0], [True])
