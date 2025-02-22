@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 
 from netCDF4 import Dataset
@@ -14,6 +15,8 @@ FS = sfplt.setfont_tex()
 
 
 
+TIMESTEPS = 1501
+L = 20
 
 GAMMA_FORMULA = [ 0.188, 5.94] # [0] + [1]temp
 
@@ -28,7 +31,9 @@ class Experiment():
 
     
 
-    def __init__(self, exptype, ijstr, temp = None, lambd = None, timesteps = 50, truncation = 8, deformation = None):
+    def __init__(self, exptype, ijstr, 
+                 temp = None, lambd = True, 
+                 timesteps = TIMESTEPS, truncation = L, deformation = None):
         self.fname = None
         self.exptype = exptype
         
@@ -86,6 +91,61 @@ class Experiment():
         pass
 
 
+    def get_dataframe(self, m=0):
+        """
+        Gets the dataframe from the file for the data at axis m. 
+        For a file generated with rectify=true, m=0 will always give the vertical component, for example
+        """
+
+        if self.get_file() == None:
+            print(self.fname, "does not exist. Generate it using generate_file first.")
+            return False
+
+
+        fh = Dataset('%s'%(self.fname), mode='r')
+        loadvar = lambda field: np.array(fh.variables[field][:])
+
+        # Model config
+        Nt, dt, L = fh.getncattr('tsteps'), fh.getncattr('dt'), fh.getncattr('L')
+
+        # Grain parameters
+        Eca_lin,  Ecc_lin  = fh.getncattr('Eca_lin'),  fh.getncattr('Ecc_lin')
+        Eca_nlin, Ecc_nlin = fh.getncattr('Eca_nlin'), fh.getncattr('Ecc_nlin')
+        alpha_lin, alpha_nlin = fh.getncattr('alpha_lin'), fh.getncattr('alpha_nlin')
+
+        # CPO state
+        lm, c = loadvar('lm'), loadvar('c_re') + 1j*loadvar('c_im') 
+        lm = np.array(lm).T
+        eigvals = loadvar('eigvals')
+        m1,m2,m3 = loadvar('m1'), loadvar('m2'), loadvar('m3')
+        p1,p2,p3 = loadvar('p1'), loadvar('p2'), loadvar('p3')
+
+        # Enhancement factors
+        Eij_lin, Eij_nlin = loadvar('Eij_lin'), loadvar('Eij_nlin') 
+        Epij_lin, Epij_nlin = loadvar('Epij_lin'), loadvar('Epij_nlin') 
+
+
+        steps = np.arange(len(eigvals[:,0]))
+        steps = self.get_pressure(steps)
+
+        print(Eij_lin)
+        print(Eij_nlin)
+        print(eigvals)
+
+        results = {
+            "step": steps, 
+            "linear_enhancement": Eij_lin[:,m], 
+            "nonlinear_enhancement": Eij_nlin[:,m], 
+            "eigval": eigvals[:,m]
+            }
+
+        return pd.DataFrame(
+
+            data = results
+            
+        )
+        
+        
 
     def init_file_name(self):
         folders = f'{self.exptype}'
@@ -101,7 +161,26 @@ class Experiment():
     
 
 
-    def generate_file(self, remake = False, rectify = False):
+    def get_file(self):
+        self.init_file_name()
+
+
+        if os.path.isfile(self.fname):
+            return self.fname
+        else:
+            return None
+        
+
+        
+
+
+
+
+
+
+
+
+    def generate_file(self, remake = False, rectify = True):
 
         self.init_file_name()
 

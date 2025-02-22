@@ -28,16 +28,12 @@ def run(action, exptypes = EXP_TYPES, temps = TEMPS):
             action(e1)
 
 
-def create_ncs(experiment):
-    experiment.generate_file(remake=False)
+def file_insides(experiment):
 
-
-def create_images(experiment):
-    experiment.load_solution(IMAGES, isolate=True, remake = False)
+    print(experiment.get_dataframe())
 
 
 def main():
-    run(create_ncs, EXP_TYPES, TEMPS)
-    #run(create_images, EXP_TYPES, TEMPS)
+    run(file_insides, ['ss'], [-30])
 
 main()
