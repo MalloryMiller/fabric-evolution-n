@@ -6,9 +6,50 @@ import os
 import matplotlib.gridspec as gridspec
 from matplotlib.offsetbox import AnchoredText
 
+'''
+ calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
+'''
+
+YEAR = 365.25 * 24 * 60 * 60 #seconds in a year
+
+CRITICAL_TEMP  = 263.15
+IDEAL_GAS = 8.3144621e-3
+
+A0_cold = 3.985e-13 * YEAR * 1.0e18  # 1 / (MPa^3 yr)
+A0_warm = 1.916e3 * YEAR * 1.0e18
+Q_cold = 60  # kJ / mol
+Q_warm = 139
+
+strain_over_time = 10e-5
+
+def calc_a(temp):
+    '''
+    Temp in Kelvin
+    '''
+    A0 = A0_warm
+    Q = Q_warm
+    if temp < CRITICAL_TEMP:
+        A0 = A0_cold
+        Q = Q_cold
+
+    return A0 * np.exp(-Q / (IDEAL_GAS * temp))
 
 
-T = 10e-5
+
+def K_to_c(K):
+    return K - 273.15
+
+def c_to_K(c):
+    return c + 273.15
+
+
+def glen_law(temp, t, n = 3):
+    '''
+    Temp in celsius
+    '''
+    e = calc_a(c_to_K(temp)) * (t ** n)
+    return e
+
 
 
 def plot_experiment_enhancement(ex, T):
@@ -36,26 +77,24 @@ def plot_experiment_enhancement(ex, T):
 
     def plot_enhancements(ax, Eij):
         df['tau'] = Eij / T
-        changes = [df.tau[1] - df.tau[0]] * len(df.step)
+        changes = np.array([df.tau[1] - df.tau[0]] * len(df.step))
+
+        df['glens'] = glen_law(ex.temp, changes)
+        print("CHANGES ", len(changes))
+        print("GLENS", len(df.glens))
 
         
-        ax.semilogy(changes, Eij, '-', c="red",   label=lblm(0,0), lw=lw0)
+        #ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
+        ax.plot(df.glens, changes, '-', c="red",  marker="o")
 
-        #xlims=[0, df.step[len(df.step) - 1]]
-        #ax.semilogy(xlims, [2.5,2.5], '--k', lw=1) 
-        #ax.semilogy(xlims, [4.375,4.375], '--k', lw=1)
-        #ax.set_xlim(xlims)
-        #ax.set_ylim(np.amin(Eij[:]), np.amax(Eij[:]))
-
-        
         if ex.exptype == "ss":
             ax.set_xlabel('Target Angle')
         else:
             ax.set_xlabel('Target Change')
 
-        ax.set_xlabel("ė")
+        ax.set_ylabel("tau")
 
-        ax.set_ylabel('$E_{vw}$')
+        ax.set_xlabel('ė')
         ax.grid()
 
     plot_enhancements(ax_Enlin, df.nonlinear_enhancement)
@@ -76,4 +115,4 @@ def plot_experiment_enhancement(ex, T):
 
 e1 = Experiment("ss", "xz", temp = -30) 
 
-plot_experiment_enhancement(e1, T)
+plot_experiment_enhancement(e1, strain_over_time)

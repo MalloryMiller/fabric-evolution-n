@@ -128,9 +128,6 @@ class Experiment():
         steps = np.arange(len(eigvals[:,0]))
         steps = self.get_pressure(steps)
 
-        print(Eij_lin)
-        print(Eij_nlin)
-        print(eigvals)
 
         results = {
             "step": steps, 
