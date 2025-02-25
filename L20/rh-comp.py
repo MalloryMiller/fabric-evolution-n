@@ -24,7 +24,9 @@ A0_warm = 1.916e3 * YEAR * 1.0e18
 Q_cold = 60  # kJ / mol
 Q_warm = 139
 
-strain_over_time = 10e-5
+strain_over_time = 10e5  # per year
+
+Eij_factor = 1
 
 def calc_a(temp):
     '''
@@ -42,9 +44,15 @@ def calc_a(temp):
 
 
 def K_to_c(K):
+    '''
+    Kelvin to celsius
+    '''
     return K - 273.15
 
 def c_to_K(c):
+    '''
+    Celsius to Kelvin
+    '''
     return c + 273.15
 
 
@@ -59,46 +67,60 @@ def glen_law(temp, t, n = 3):
 
 def plot_experiment_enhancement(ex, T):
     '''
-    ex is an Experiment object which already has generated an .nc file
+    ex is a list of Experiment objects which have already been generated as an .nc file
 
     '''
 
 
 
     dpi, scale = 200, 3.3
-    fig = plt.figure(figsize=(4/2*2.1*scale,2.3*scale/1.7))
-    gs = gridspec.GridSpec(1,2, height_ratios=[.5], width_ratios=[1,1])
+    fig = plt.figure(figsize=(4*scale,3*scale))
+    gs = gridspec.GridSpec(2,2, height_ratios=[1,1], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
+
 
     ax_Elin    = plt.subplot(gs[0, 0])
     ax_Enlin   = plt.subplot(gs[0, 1])
+    ax_Elin_E    = plt.subplot(gs[1, 0])
+    ax_Enlin_E   = plt.subplot(gs[1, 1])
   
     lw0, lw1, lw2 = 2.5,2.25,2.0
 
 
     colorbar_made = False
+    current_slopes = {
+        ax_Elin: [],
+        ax_Enlin: [],
+        ax_Elin_E: [],
+        ax_Enlin_E: []
+    }
 
     for x in ex:
 
         df = x.get_dataframe()
 
-        def plot_enhancements(ax, Eij, df, colorbar_made = colorbar_made):
-            if x.exptype == "ss":
-                df.strain = df.strain / 90
-            else:
-                df.strain = np.abs(df.strain)
-            print(df.strain)
+        def plot_enhancements(ax, Eij, df, colorbar_made = colorbar_made, use_Eij = True):
+            df.strain = np.abs(df.strain)
 
             df['tau'] = df.strain / T
-            df['nondistinct_tau'] = np.array([df.tau[len(df.tau) - 1]] * len(df.strain))
+            #df['nondistinct_tau'] = np.array([df.tau[len(df.tau) - 1]] * len(df.strain))
 
-            df['glens'] = glen_law(x.temp, df['tau'])
 
-            x_ = df['glens'] *Eij
-            y_ = df['tau']
+            x_ = df['tau']
+            if use_Eij == "exponent":
+                ax.set_ylabel('log(Glens where n=3+E)')
+                df['glens'] = glen_law(x.temp, df['tau'], n=3 + Eij)
+                y_ =  df['glens']
+            elif use_Eij:
+                ax.set_ylabel('log(Glens * E)')
+                df['glens'] = glen_law(x.temp, df['tau'])
+                y_ =  df['glens'] * (Eij * Eij_factor)
+            else:
+                ax.set_ylabel('log(Glens)')
+                df['glens'] = glen_law(x.temp, df['tau'])
+                y_ =  df['glens'] #* Eij * Eij_factor
 
             
-            #ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
             data = ax.scatter(x_, y_, label=str(x.temp) + "°C", c=[x.temp]* len(df.strain), s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP))
 
             if x.exptype == "ss":
@@ -106,9 +128,9 @@ def plot_experiment_enhancement(ex, T):
             else:
                 ax.set_xlabel('Target Change')
 
-            ax.set_ylabel("Tau")
+        
+            ax.set_xlabel("log(Tau)")
 
-            ax.set_xlabel('GlensxE')
             ax.grid()
             #ax.legend(fontsize=7)
             ax.set_xscale('log')
@@ -117,15 +139,30 @@ def plot_experiment_enhancement(ex, T):
                 fig.colorbar(data, label = "Temperature (C)")
                 colorbar_made = True
 
+            m, b = np.polyfit(np.log(x_[1:]), np.log(y_[1:]), 1)
+            current_slopes[ax].append(m)
 
             return colorbar_made
         
+        colorbar_made = plot_enhancements(ax_Enlin, df.nonlinear_enhancement, df, use_Eij = False)
+        plot_enhancements(ax_Elin,  df.linear_enhancement, df, use_Eij = False)
+        plot_enhancements(ax_Enlin_E, df.nonlinear_enhancement, df)
+        plot_enhancements(ax_Elin_E,  df.linear_enhancement, df)
 
-        colorbar_made = plot_enhancements(ax_Enlin, df.nonlinear_enhancement, df)
-        ax_Enlin.set_title(r'Nonlinear Sachs')
 
-        plot_enhancements(ax_Elin,  df.linear_enhancement, df)
-        ax_Elin.set_title(r'Linear mixed Taylor--Sachs')
+
+    ax_Enlin.set_title(r'Nonlinear Sachs')
+    add_slope(ax_Enlin, current_slopes)
+
+
+    ax_Elin.set_title(r'Linear mixed Taylor--Sachs')
+    add_slope(ax_Elin, current_slopes)
+
+    ax_Enlin_E.set_title(r'Nonlinear Sachs with E')
+    add_slope(ax_Enlin_E, current_slopes)
+
+    ax_Elin_E.set_title(r'Linear mixed Taylor--Sachs with E')
+    add_slope(ax_Elin_E, current_slopes)
 
 
 
@@ -136,9 +173,16 @@ def plot_experiment_enhancement(ex, T):
     plt.close('all')
 
 
+def add_slope(ax, slope_dict):
+    ax.text(.05,.95, "Average n = " + str(round(np.mean(slope_dict[ax]), 2)), transform=ax.transAxes,
+        horizontalalignment='left', verticalalignment='top',
+        bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
+
+
+
 scope = []
 
-EXP = "cc"
+EXP = "ue"
 TEMPS = []
 for x in range(MIN_TEMP, MAX_TEMP, 2):
     TEMPS.append(x)
