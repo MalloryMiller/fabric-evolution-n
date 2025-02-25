@@ -105,35 +105,28 @@ class Experiment():
         fh = Dataset('%s'%(self.fname), mode='r')
         loadvar = lambda field: np.array(fh.variables[field][:])
 
-        # Model config
-        Nt, dt, L = fh.getncattr('tsteps'), fh.getncattr('dt'), fh.getncattr('L')
-
-        # Grain parameters
-        Eca_lin,  Ecc_lin  = fh.getncattr('Eca_lin'),  fh.getncattr('Ecc_lin')
-        Eca_nlin, Ecc_nlin = fh.getncattr('Eca_nlin'), fh.getncattr('Ecc_nlin')
-        alpha_lin, alpha_nlin = fh.getncattr('alpha_lin'), fh.getncattr('alpha_nlin')
-
-        # CPO state
-        lm, c = loadvar('lm'), loadvar('c_re') + 1j*loadvar('c_im') 
-        lm = np.array(lm).T
         eigvals = loadvar('eigvals')
-        m1,m2,m3 = loadvar('m1'), loadvar('m2'), loadvar('m3')
-        p1,p2,p3 = loadvar('p1'), loadvar('p2'), loadvar('p3')
 
         # Enhancement factors
         Eij_lin, Eij_nlin = loadvar('Eij_lin'), loadvar('Eij_nlin') 
-        Epij_lin, Epij_nlin = loadvar('Epij_lin'), loadvar('Epij_nlin') 
 
 
         steps = np.arange(len(eigvals[:,0]))
         steps = self.get_pressure(steps)
 
 
+
+        temp = np.array([self.temp] * len(steps))
+        expt = np.array([self.exptype] * len(steps))
+
+
         results = {
-            "step": steps, 
+            "strain": steps, 
             "linear_enhancement": Eij_lin[:,m], 
             "nonlinear_enhancement": Eij_nlin[:,m], 
-            "eigval": eigvals[:,m]
+            "eigval": eigvals[:,m],
+            "temp": temp,
+            "exp": expt
             }
 
         return pd.DataFrame(

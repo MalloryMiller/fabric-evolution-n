@@ -1,5 +1,6 @@
 from lagrange_gen import Experiment
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import numpy as np
 import os
 
@@ -9,6 +10,9 @@ from matplotlib.offsetbox import AnchoredText
 '''
  calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
 '''
+
+MAX_TEMP = 0
+MIN_TEMP = -30
 
 YEAR = 365.25 * 24 * 60 * 60 #seconds in a year
 
@@ -36,6 +40,7 @@ def calc_a(temp):
 
 
 
+
 def K_to_c(K):
     return K - 273.15
 
@@ -57,12 +62,11 @@ def plot_experiment_enhancement(ex, T):
     ex is an Experiment object which already has generated an .nc file
 
     '''
-    df = ex.get_dataframe()
 
 
 
     dpi, scale = 200, 3.3
-    fig = plt.figure(figsize=(3/2*2.1*scale,2.3*scale/1.7))
+    fig = plt.figure(figsize=(4/2*2.1*scale,2.3*scale/1.7))
     gs = gridspec.GridSpec(1,2, height_ratios=[.5], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
 
@@ -72,36 +76,56 @@ def plot_experiment_enhancement(ex, T):
     lw0, lw1, lw2 = 2.5,2.25,2.0
 
 
-    lblm = lambda ii,jj: '$E_{m_%i m_%i}$'%(ii+1,jj+1)
-    lblp = lambda ii,jj: '$E_{p_%i p_%i}$'%(ii+1,jj+1)
+    colorbar_made = False
 
-    def plot_enhancements(ax, Eij):
-        df['tau'] = Eij / T
-        changes = np.array([df.tau[1] - df.tau[0]] * len(df.step))
+    for x in ex:
 
-        df['glens'] = glen_law(ex.temp, changes)
-        print("CHANGES ", len(changes))
-        print("GLENS", len(df.glens))
+        df = x.get_dataframe()
 
+        def plot_enhancements(ax, Eij, df, colorbar_made = colorbar_made):
+            if x.exptype == "ss":
+                df.strain = df.strain / 90
+            else:
+                df.strain = np.abs(df.strain)
+            print(df.strain)
+
+            df['tau'] = df.strain / T
+            df['nondistinct_tau'] = np.array([df.tau[len(df.tau) - 1]] * len(df.strain))
+
+            df['glens'] = glen_law(x.temp, df['tau'])
+
+            x_ = df['glens'] *Eij
+            y_ = df['tau']
+
+            
+            #ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
+            data = ax.scatter(x_, y_, label=str(x.temp) + "°C", c=[x.temp]* len(df.strain), s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP))
+
+            if x.exptype == "ss":
+                ax.set_xlabel('Target Angle')
+            else:
+                ax.set_xlabel('Target Change')
+
+            ax.set_ylabel("Tau")
+
+            ax.set_xlabel('GlensxE')
+            ax.grid()
+            #ax.legend(fontsize=7)
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            if not colorbar_made:
+                fig.colorbar(data, label = "Temperature (C)")
+                colorbar_made = True
+
+
+            return colorbar_made
         
-        #ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
-        ax.plot(df.glens, changes, '-', c="red",  marker="o")
 
-        if ex.exptype == "ss":
-            ax.set_xlabel('Target Angle')
-        else:
-            ax.set_xlabel('Target Change')
+        colorbar_made = plot_enhancements(ax_Enlin, df.nonlinear_enhancement, df)
+        ax_Enlin.set_title(r'Nonlinear Sachs')
 
-        ax.set_ylabel("tau")
-
-        ax.set_xlabel('ė')
-        ax.grid()
-
-    plot_enhancements(ax_Enlin, df.nonlinear_enhancement)
-    ax_Enlin.set_title(r'Nonlinear Sachs')
-
-    plot_enhancements(ax_Elin,  df.linear_enhancement)
-    ax_Elin.set_title(r'Linear mixed Taylor--Sachs')
+        plot_enhancements(ax_Elin,  df.linear_enhancement, df)
+        ax_Elin.set_title(r'Linear mixed Taylor--Sachs')
 
 
 
@@ -112,7 +136,27 @@ def plot_experiment_enhancement(ex, T):
     plt.close('all')
 
 
+scope = []
 
-e1 = Experiment("ss", "xz", temp = -30) 
+EXP = "cc"
+TEMPS = []
+for x in range(MIN_TEMP, MAX_TEMP, 2):
+    TEMPS.append(x)
 
-plot_experiment_enhancement(e1, strain_over_time)
+
+
+for tem in TEMPS:
+    print(EXP, tem)
+    
+    if EXP != "ss" :
+        e1 = Experiment(EXP, "zz", temp = tem) 
+    else:
+        e1 = Experiment(EXP, "xz", temp = tem) 
+
+    print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+    scope.append(e1)
+
+
+#e1 = Experiment("ss", "xz", temp = -30) 
+
+plot_experiment_enhancement(scope, strain_over_time)
