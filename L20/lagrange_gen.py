@@ -135,8 +135,6 @@ class Experiment():
             
         )
         
-        
-
     def init_file_name(self):
         folders = f'{self.exptype}'
         if self.Gamma and self.temp != None:
