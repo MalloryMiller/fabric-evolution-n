@@ -24,7 +24,7 @@ A0_warm = 1.916e3 * YEAR * 1.0e18
 Q_cold = 60  # kJ / mol
 Q_warm = 139
 
-strain_over_time = 10e5  # per year
+strain_over_time = 10e-5  # per year
 
 Eij_factor = 1
 
@@ -65,9 +65,21 @@ def glen_law(temp, t, n = 3):
 
 
 
+# https://github.com/nicholasmr/specfab/blob/main/src/deformationmodes.f90
+
+'''
+diag([b**((1+r)/2), b**((1-r)/2), b**(-1)])
+'''
+
+def ss_strain(T,angle):
+    return T **( (np.deg2rad(angle) + 1) / 2)
+
+
+
 def plot_experiment_enhancement(ex, T):
     '''
     ex is a list of Experiment objects which have already been generated as an .nc file
+    T is the time the strain was over
 
     '''
 
@@ -94,111 +106,131 @@ def plot_experiment_enhancement(ex, T):
         ax_Elin_E: [],
         ax_Enlin_E: []
     }
+    ax_Elin_data =  None
+    ax_Enlin_data = None
+    ax_Elin_E_data   =  None
+    ax_Enlin_E_data = None
 
     for x in ex:
-
-        df = x.get_dataframe()
-
-        def plot_enhancements(ax, Eij, df, colorbar_made = colorbar_made, use_Eij = True):
-            df.strain = np.abs(df.strain)
-
-            df['tau'] = df.strain / T
-            #df['nondistinct_tau'] = np.array([df.tau[len(df.tau) - 1]] * len(df.strain))
-
-
-            x_ = df['tau']
-            if use_Eij == "exponent":
-                ax.set_ylabel('log(Glens where n=3+E)')
-                df['glens'] = glen_law(x.temp, df['tau'], n=3 + Eij)
-                y_ =  df['glens']
-            elif use_Eij:
-                ax.set_ylabel('log(Glens * E)')
-                df['glens'] = glen_law(x.temp, df['tau'])
-                y_ =  df['glens'] * (Eij * Eij_factor)
-            else:
-                ax.set_ylabel('log(Glens)')
-                df['glens'] = glen_law(x.temp, df['tau'])
-                y_ =  df['glens'] #* Eij * Eij_factor
-
-            
-            data = ax.scatter(x_, y_, label=str(x.temp) + "°C", c=[x.temp]* len(df.strain), s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP))
-
-            if x.exptype == "ss":
-                ax.set_xlabel('Target Angle')
-            else:
-                ax.set_xlabel('Target Change')
-
         
-            ax.set_xlabel("log(Tau)")
-
-            ax.grid()
-            #ax.legend(fontsize=7)
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            if not colorbar_made:
-                fig.colorbar(data, label = "Temperature (C)")
-                colorbar_made = True
-
-            m, b = np.polyfit(np.log(x_[1:]), np.log(y_[1:]), 1)
-            current_slopes[ax].append(m)
-
-            return colorbar_made
-        
-        colorbar_made = plot_enhancements(ax_Enlin, df.nonlinear_enhancement, df, use_Eij = False)
-        plot_enhancements(ax_Elin,  df.linear_enhancement, df, use_Eij = False)
-        plot_enhancements(ax_Enlin_E, df.nonlinear_enhancement, df)
-        plot_enhancements(ax_Elin_E,  df.linear_enhancement, df)
+        ax_Elin_data = plot_enhancements(ax_Enlin, 'nonlinear_enhancement', x, T, current_slopes, use_Eij = False)
+        ax_Enlin_data = plot_enhancements(ax_Elin,  'linear_enhancement', x, T, current_slopes, use_Eij = False)
+        ax_Elin_E_data = plot_enhancements(ax_Enlin_E, 'nonlinear_enhancement', x, T, current_slopes)
+        ax_Enlin_E_data = plot_enhancements(ax_Elin_E,  'linear_enhancement', x, T, current_slopes)
 
 
 
     ax_Enlin.set_title(r'Nonlinear Sachs')
     add_slope(ax_Enlin, current_slopes)
-
+    fig.colorbar(ax_Elin_data, label = "Temperature (°C)")
 
     ax_Elin.set_title(r'Linear mixed Taylor--Sachs')
     add_slope(ax_Elin, current_slopes)
+    fig.colorbar(ax_Enlin_data, label = "Temperature (°C)")
 
     ax_Enlin_E.set_title(r'Nonlinear Sachs with E')
     add_slope(ax_Enlin_E, current_slopes)
+    fig.colorbar(ax_Elin_E_data, label = "Temperature (°C)")
 
     ax_Elin_E.set_title(r'Linear mixed Taylor--Sachs with E')
     add_slope(ax_Elin_E, current_slopes)
+    fig.colorbar(ax_Enlin_E_data, label = "Temperature (°C)")
 
 
 
     os.makedirs("output", exist_ok=True)
-    fout = 'output/cache.png'
+    fout = f'output/cache.png'
     print('Saving %s'%(fout))
     plt.savefig(fout, dpi=dpi)
     plt.close('all')
 
 
+
+
 def add_slope(ax, slope_dict):
-    ax.text(.05,.95, "Average n = " + str(round(np.mean(slope_dict[ax]), 2)), transform=ax.transAxes,
-        horizontalalignment='left', verticalalignment='top',
-        bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
+    ax.text(.05,.95, "Average n = " + str(round(np.mean(slope_dict[ax]), 2)) + 
+            "\n Min n = " + str(round(np.min(slope_dict[ax]), 2)) +
+            "\n Max n = " + str(round(np.max(slope_dict[ax]), 2)) , 
+            
+            transform=ax.transAxes, horizontalalignment='left', verticalalignment='top',
+            bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
+
+
+
+
+def plot_enhancements(ax, Eij, ex, T, slopes, use_Eij = True):
+    df = ex.get_dataframe()
+    df.strain = np.abs(df.strain)
+    print(df[Eij])
+    if ex.exptype != "ss":
+        df['tau'] = df.strain * T
+    else:
+        df['tau'] = ss_strain(T, df.strain)
+        
+    #df['nondistinct_tau'] = np.array([df.tau[len(df.tau) - 1]] * len(df.strain))
+
+
+    x_ = df['tau']
+    if use_Eij == "exponent":
+        ax.set_ylabel('log(Glens where n=3+E)')
+        df['glens'] = glen_law(ex.temp, df['tau'], n=4 * df[Eij])
+        y_ =  df['glens']
+    elif use_Eij:
+        ax.set_ylabel('log(Glens * E)')
+        df['glens'] = glen_law(ex.temp, df['tau'])
+        y_ =  df['glens'] * (df[Eij] * Eij_factor)
+    else:
+        ax.set_ylabel('log(Glens)')
+        df['glens'] = glen_law(ex.temp, df['tau'])
+        y_ =  df['glens'] #* Eij * Eij_factor
+
+    
+    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=[ex.temp]* len(df.strain), s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP))
+
+    if ex.exptype == "ss":
+        ax.set_xlabel('Target Angle')
+    else:
+        ax.set_xlabel('Target Change')
+
+
+    ax.set_xlabel("log(Tau)")
+
+    ax.grid()
+    #ax.legend(fontsize=7)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    m, b = np.polyfit(np.log(x_[1:]), np.log(y_[1:]), 1)
+    slopes[ax].append(m)
+
+    return data
 
 
 
 scope = []
 
-EXP = "ue"
+EXP = ["uc", "ss", "cc", "ue"]
+CC = ["cc"]
+SS = ["ss"]
+UE = ["ue"]
+UC = ["uc"]
+
 TEMPS = []
 for x in range(MIN_TEMP, MAX_TEMP, 2):
     TEMPS.append(x)
 
 
+for x in SS:
+    for tem in TEMPS:
+        print(x, tem)
+        
+        if x != "ss" :
+            e1 = Experiment(x, "zz", temp = tem) 
+        else:
+            e1 = Experiment(x, "xz", temp = tem) 
 
-for tem in TEMPS:
-    print(EXP, tem)
-    
-    if EXP != "ss" :
-        e1 = Experiment(EXP, "zz", temp = tem) 
-    else:
-        e1 = Experiment(EXP, "xz", temp = tem) 
-
-    print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
-    scope.append(e1)
+        print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+        scope.append(e1)
 
 
 #e1 = Experiment("ss", "xz", temp = -30) 

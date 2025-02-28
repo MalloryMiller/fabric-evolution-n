@@ -29,7 +29,7 @@ def run(action, exptypes = EXP_TYPES, temps = TEMPS):
 
 
 def create_ncs(experiment):
-    experiment.generate_file(remake=False)
+    experiment.generate_file(remake=True)
 
 
 def create_images(experiment):
@@ -37,7 +37,7 @@ def create_images(experiment):
 
 
 def main():
-    run(create_ncs, EXP_TYPES, TEMPS)
+    run(create_ncs, ['ss'], TEMPS)
     #run(create_images, EXP_TYPES, TEMPS)
 
 main()
