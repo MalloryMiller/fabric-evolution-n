@@ -19,17 +19,7 @@ strain_over_time = 1e-5  # per year
 
 Eij_factor = 1
 
-def calc_a(temp):
-    '''
-    Temp in Kelvin
-    '''
-    A0 = A0_warm
-    Q = Q_warm
-    if temp < CRITICAL_TEMP:
-        A0 = A0_cold
-        Q = Q_cold
-
-    return A0 * np.exp(-Q / (IDEAL_GAS * temp))
+Eij_cutoff = 0.00001
 
 
 scope = []
@@ -45,7 +35,7 @@ for x in range(MIN_TEMP, MAX_TEMP, 2):
     TEMPS.append(x)
 
 
-for x in CC:
+for x in UE:
     for tem in TEMPS:
         print(x, tem)
         
@@ -56,6 +46,48 @@ for x in CC:
 
         print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
         scope.append(e1)
+
+
+
+
+
+def get_range(Es):
+    i = 1
+    to_test = []
+    while i < len(Es):
+        to_test.append(Es[i-1] - Es[i])
+        if np.abs(Es[i-1] - Es[i]) < Eij_cutoff:
+            print((Es[i-1] - Es[i]), Eij_cutoff)
+            return i
+        i += 1
+
+    print("NEVER STOPPED: ", np.min(to_test))
+    return len(Es)-1
+
+
+def cut_to_range(Cut, Es):
+    '''
+    Cut : the list being cut down based on Es
+    Es  : where the range being cut of is derived
+    '''
+    i = get_range(Es)
+    return Cut[:i]
+
+
+
+
+def calc_a(temp):
+    '''
+    Temp in Kelvin
+    '''
+    A0 = A0_warm
+    Q = Q_warm
+    if temp < CRITICAL_TEMP:
+        A0 = A0_cold
+        Q = Q_cold
+
+    return A0 * np.exp(-Q / (IDEAL_GAS * temp))
+
 
 
 
