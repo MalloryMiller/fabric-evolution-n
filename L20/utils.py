@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from lagrange_gen import Experiment
 
@@ -15,7 +16,7 @@ A0_warm = 1.916e3 * YEAR * 1.0e18
 Q_cold = 60  # kJ / mol
 Q_warm = 139
 
-strain_over_time = 1e-5  # per year
+strain_over_time = 2e-1  # per year
 
 Eij_factor = 1
 
@@ -31,13 +32,12 @@ UE = ["ue"]
 UC = ["uc"]
 
 TEMPS = []
-for x in range(MIN_TEMP, MAX_TEMP, 2):
+for x in range(MIN_TEMP, MAX_TEMP+1, 2):
     TEMPS.append(x)
 
 
-for x in UE:
+for x in CC:
     for tem in TEMPS:
-        print(x, tem)
         
         if x != "ss" :
             e1 = Experiment(x, "zz", temp = tem) 
@@ -57,7 +57,6 @@ def get_range(Es):
     while i < len(Es):
         to_test.append(Es[i-1] - Es[i])
         if np.abs(Es[i-1] - Es[i]) < Eij_cutoff:
-            print((Es[i-1] - Es[i]), Eij_cutoff)
             return i
         i += 1
 
@@ -72,6 +71,74 @@ def cut_to_range(Cut, Es):
     '''
     i = get_range(Es)
     return Cut[:i]
+
+
+
+def get_balanced_average(x, y, temp = 0):
+    x = np.sort(x)
+    y = np.sort(y)
+    x_range = x[-1] - x[0]
+    average = 0
+    
+    i = 1
+    while i < len(x):
+        rise = y[i] - y[i-1]
+        run  = x[i] - x[i-1]
+
+        average += (rise / run) * (run / x_range)
+
+        i += 1
+
+
+
+    results = {
+        "ns": [average], 
+        "temp": [temp], 
+        "weight": [1], 
+        }
+
+    return pd.DataFrame(
+
+        data = results
+        
+    )
+
+
+def get_individual_slopes(x, y, temp):
+    x = np.copy(x)
+    y = np.copy(y)
+    temp = temp[:len(x) - 1]
+    slopes = []
+    x_range = x[-1] - x[0]
+    weights = []
+
+    
+    i = 1
+    while i < len(x):
+        rise = y[i] - y[i-1]
+        run  = x[i] - x[i-1]
+
+        slopes.append(rise / run)
+        weights.append(run/x_range)
+
+
+        i += 1
+
+
+    results = pd.DataFrame(
+
+        data = {
+
+            "ns": slopes, 
+            "temp": temp, 
+            "weight": weights, 
+
+            }
+        
+    )
+
+    return results
+
 
 
 
