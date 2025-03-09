@@ -8,6 +8,9 @@ from utils import *
 
 import matplotlib.gridspec as gridspec
 
+
+CMAP = mp.cm.plasma
+
 '''
  calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
 '''
@@ -107,11 +110,11 @@ def n_hist(ax, ns, Etype, balanced_average = True):
         datas.append(ns.ns[ns.temp == t])
 
     n, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
-    print(patches)
+    print(n, bins)
     for i, patch in enumerate(patches):
         for bar in patch:
-            bar.set_facecolor(mp.cm.viridis(colors.Normalize(MIN_TEMP, MAX_TEMP)(temps[i])))
-
+            bar.set_facecolor(CMAP(colors.Normalize(MIN_TEMP, MAX_TEMP)(temps[i])))
+    #ax.bar(n, bins, histtype='bar', rwidth=0.95, stacked = True)
     title = str(Etype) + " n Values"
     ax.set_title(title)
     ax.set_xlabel("n Value")
@@ -140,7 +143,7 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 
     
-    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP))
+    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP)
 
     if ex.exptype == "ss":
         ax.set_xlabel('Target Angle')

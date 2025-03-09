@@ -23,6 +23,7 @@ Eij_factor = 1
 Eij_cutoff = 0.00001
 
 
+
 scope = []
 
 EXP = ["uc", "ss", "cc", "ue"]
@@ -36,7 +37,7 @@ for x in range(MIN_TEMP, MAX_TEMP+1, 2):
     TEMPS.append(x)
 
 
-for x in CC:
+for x in UE:
     for tem in TEMPS:
         
         if x != "ss" :
