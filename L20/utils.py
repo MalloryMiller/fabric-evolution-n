@@ -20,7 +20,7 @@ strain_over_time = 2e-1  # per year
 
 Eij_factor = 1
 
-Eij_cutoff = 0.00001
+Eij_cutoff_factor = 50000
 
 
 
@@ -55,6 +55,7 @@ for x in UE:
 def get_range(Es):
     i = 1
     to_test = []
+    Eij_cutoff = (np.max(Es) - np.min(Es))/Eij_cutoff_factor
     while i < len(Es):
         to_test.append(Es[i-1] - Es[i])
         if np.abs(Es[i-1] - Es[i]) < Eij_cutoff:
@@ -112,6 +113,7 @@ def get_individual_slopes(x, y, temp):
     slopes = []
     x_range = x[-1] - x[0]
     weights = []
+    avg_st_rate = []
 
     
     i = 1
@@ -120,7 +122,8 @@ def get_individual_slopes(x, y, temp):
         run  = x[i] - x[i-1]
 
         slopes.append(rise / run)
-        weights.append(run/x_range)
+        weights.append(run / x_range)
+        avg_st_rate.append(rise)
 
 
         i += 1
@@ -132,6 +135,7 @@ def get_individual_slopes(x, y, temp):
 
             "ns": slopes, 
             "temp": temp, 
+            "avg_st_rate": avg_st_rate, 
             "weight": weights, 
 
             }

@@ -9,7 +9,8 @@ from utils import *
 import matplotlib.gridspec as gridspec
 
 
-CMAP = mp.cm.plasma
+CMAP_TEMP = mp.cm.plasma
+CMAP_STRAIN_RATE = mp.cm.copper_r
 
 '''
  calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
@@ -53,8 +54,8 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True):
                      cutoff = cutoff, balanced_average = balanced_average)
 
 
-    n_hist(ax_Elin_n, current_slopes[ax_Elin_E],"Nonlinear Sachs")
-    n_hist(ax_Enlin_n, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
+    n_hist(fig, ax_Elin_n, current_slopes[ax_Elin_E],"Nonlinear Sachs")
+    n_hist(fig, ax_Enlin_n, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
 
     os.makedirs("output", exist_ok=True)
     fout = f'output/cache.png'
@@ -98,27 +99,35 @@ def add_slope(ax, slope_dict):
             bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
 
 
-def n_hist(ax, ns, Etype, balanced_average = True):
+def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
+    CMAP = CMAP_TEMP
+    if which_ns == 'avg_st_rate':
+        CMAP = CMAP_STRAIN_RATE
     datas = []
     temps = []
 
-    print(np.min(ns.ns[ns.temp == 0]))
 
 
-    for t in ns.temp.unique():
+    for t in ns[which_ns].unique():
         temps.append(t)
-        datas.append(ns.ns[ns.temp == t])
+        datas.append(ns.ns[ns[which_ns] == t])
+        
+    min_ns = np.min(temps)
+    max_ns = np.max(temps)
 
     n, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
     print(n, bins)
     for i, patch in enumerate(patches):
         for bar in patch:
-            bar.set_facecolor(CMAP(colors.Normalize(MIN_TEMP, MAX_TEMP)(temps[i])))
+            bar.set_facecolor(CMAP(colors.Normalize(min_ns, max_ns)(temps[i])))
     #ax.bar(n, bins, histtype='bar', rwidth=0.95, stacked = True)
     title = str(Etype) + " n Values"
     ax.set_title(title)
     ax.set_xlabel("n Value")
     ax.set_ylabel("Count")
+
+
+    #fig.colorbar(ax, label = "Temperature (°C)")
 
 
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
@@ -143,7 +152,7 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 
     
-    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP)
+    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
 
     if ex.exptype == "ss":
         ax.set_xlabel('Target Angle')
@@ -173,5 +182,5 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 #e1 = Experiment("ss", "xz", temp = -30) 
 
-plot_all_enhancement(scope, strain_over_time, balanced_average="individual")
+plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True)
 
