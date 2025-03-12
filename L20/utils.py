@@ -20,11 +20,9 @@ strain_over_time = 2e-1  # per year
 
 Eij_factor = 1
 
-Eij_cutoff_factor = 50000
+Eij_cutoff_factor = 10000
 
 
-
-scope = []
 
 EXP = ["uc", "ss", "cc", "ue"]
 CC = ["cc"]
@@ -35,18 +33,6 @@ UC = ["uc"]
 TEMPS = []
 for x in range(MIN_TEMP, MAX_TEMP+1, 2):
     TEMPS.append(x)
-
-
-for x in UE:
-    for tem in TEMPS:
-        
-        if x != "ss" :
-            e1 = Experiment(x, "zz", temp = tem) 
-        else:
-            e1 = Experiment(x, "xz", temp = tem) 
-
-        print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
-        scope.append(e1)
 
 
 
@@ -109,6 +95,8 @@ def get_balanced_average(x, y, temp = 0):
 def get_individual_slopes(x, y, temp):
     x = np.copy(x)
     y = np.copy(y)
+    if len(x) ==  0:
+        return None
     temp = temp[:len(x) - 1]
     slopes = []
     x_range = x[-1] - x[0]

@@ -1,4 +1,5 @@
 
+from matplotlib.cm import ScalarMappable
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib as mp
@@ -26,17 +27,19 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True):
     '''
 
     dpi, scale = 200, 3.3
-    fig = plt.figure(figsize=(4*scale,5*scale))
-    gs = gridspec.GridSpec(3,2, height_ratios=[.75, .75, .75], width_ratios=[1,1])
+    fig = plt.figure(figsize=(4*scale,6.5*scale))
+    gs = gridspec.GridSpec(4,2, height_ratios=[1,1,.75,.75], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
 
 
-    ax_Elin    = plt.subplot(gs[0, 0])
-    ax_Enlin   = plt.subplot(gs[0, 1])
-    ax_Elin_E    = plt.subplot(gs[1, 0])
-    ax_Enlin_E   = plt.subplot(gs[1, 1])
-    ax_Elin_n    = plt.subplot(gs[2, 0])
-    ax_Enlin_n   = plt.subplot(gs[2, 1])
+    ax_Elin           = plt.subplot(gs[0, 0])
+    ax_Enlin          = plt.subplot(gs[0, 1])
+    ax_Elin_E         = plt.subplot(gs[1, 0])
+    ax_Enlin_E        = plt.subplot(gs[1, 1])
+    ax_Elin_n_temp    = plt.subplot(gs[2, 0])
+    ax_Enlin_n_temp   = plt.subplot(gs[2, 1])
+    ax_Elin_n_rate    = plt.subplot(gs[3, 0])
+    ax_Enlin_n_rate   = plt.subplot(gs[3, 1])
     
     current_slopes = {}
 
@@ -54,8 +57,11 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True):
                      cutoff = cutoff, balanced_average = balanced_average)
 
 
-    n_hist(fig, ax_Elin_n, current_slopes[ax_Elin_E],"Nonlinear Sachs")
-    n_hist(fig, ax_Enlin_n, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
+    n_hist(fig, ax_Elin_n_temp, current_slopes[ax_Elin_E],"Nonlinear Sachs")
+    n_hist(fig, ax_Enlin_n_temp, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
+
+    n_hist(fig, ax_Elin_n_rate, current_slopes[ax_Elin_E],"Nonlinear Sachs", which_ns = 'avg_st_rate')
+    n_hist(fig, ax_Enlin_n_rate, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs", which_ns = 'avg_st_rate')
 
     os.makedirs("output", exist_ok=True)
     fout = f'output/cache.png'
@@ -90,7 +96,6 @@ def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, use_Eij = True, cutoff =
 
 
 def add_slope(ax, slope_dict):
-    print(slope_dict)
     ax.text(.05,.95, "Average n = " + str(round(np.mean(slope_dict.ns), 2)) + 
             "\n Min n = " + str(round(np.min(slope_dict.ns), 2)) +
             "\n Max n = " + str(round(np.max(slope_dict.ns), 2)), 
@@ -100,13 +105,8 @@ def add_slope(ax, slope_dict):
 
 
 def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
-    CMAP = CMAP_TEMP
-    if which_ns == 'avg_st_rate':
-        CMAP = CMAP_STRAIN_RATE
     datas = []
     temps = []
-
-
 
     for t in ns[which_ns].unique():
         temps.append(t)
@@ -115,11 +115,20 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     min_ns = np.min(temps)
     max_ns = np.max(temps)
 
-    n, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
-    print(n, bins)
+    CMAP = CMAP_TEMP
+    norm = colors.Normalize(min_ns, max_ns)
+    c_label = "Temperature (°C)"
+    if which_ns == 'avg_st_rate':
+        CMAP = CMAP_STRAIN_RATE
+        norm = colors.LogNorm(min_ns, max_ns)
+        c_label = "log(Strain Rate x E)"
+
+
+    h, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
     for i, patch in enumerate(patches):
         for bar in patch:
-            bar.set_facecolor(CMAP(colors.Normalize(min_ns, max_ns)(temps[i])))
+            bar.set_facecolor(CMAP(norm(temps[i])))
+
     #ax.bar(n, bins, histtype='bar', rwidth=0.95, stacked = True)
     title = str(Etype) + " n Values"
     ax.set_title(title)
@@ -127,7 +136,9 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     ax.set_ylabel("Count")
 
 
-    #fig.colorbar(ax, label = "Temperature (°C)")
+    colorbar_colors = ScalarMappable(norm)
+    colorbar_colors.set_cmap(CMAP)
+    fig.colorbar(colorbar_colors, ax=ax, label = c_label)
 
 
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
@@ -179,8 +190,19 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     return data
 
 
+scope = []
 
-#e1 = Experiment("ss", "xz", temp = -30) 
+for x in CC:
+    for tem in TEMPS:
+        
+        if x != "ss" :
+            e1 = Experiment(x, "zz", temp = tem) 
+        else:
+            e1 = Experiment(x, "xz", temp = tem) 
 
-plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True)
+        print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+        scope.append(e1)
+
+
+plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False)
 
