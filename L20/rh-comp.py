@@ -165,10 +165,7 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     
     data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
 
-    if ex.exptype == "ss":
-        ax.set_xlabel('Target Angle')
-    else:
-        ax.set_xlabel('Target Change')
+    ax.set_xlabel('Target Change')
 
 
     ax.set_xlabel("log(Tau)")
@@ -192,7 +189,7 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 scope = []
 
-for x in CC:
+for x in SS:
     for tem in TEMPS:
         
         if x != "ss" :

@@ -119,6 +119,9 @@ class Experiment():
         temp = np.array([self.temp] * len(steps))
         expt = np.array([self.exptype] * len(steps))
 
+        if self.exptype == "ss":
+            steps = np.tan(np.deg2rad(steps))
+
 
         results = {
             "strain": steps, 
