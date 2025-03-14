@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import csv
 
 from netCDF4 import Dataset
 
@@ -581,3 +582,88 @@ def get_vertical_component(m1,m2,m3):
     if (m3[2] == 1):
         return 2
     return None
+
+
+
+class ObservedExperiment(Experiment):
+
+    T_index = 15
+    exp_index = 4
+    strain_rate_index = 36
+
+
+    def __init__(self, exptype, temp, strain_rate):
+
+        self.strain_rate = strain_rate
+        
+
+
+        super().__init__(exptype, "xx", 
+                 temp=temp, lambd=True, 
+                 timesteps=2, truncation=None, deformation=None)
+        
+
+
+        pass
+
+
+
+
+class ExperimentReader(csv.DictReader):
+    def __init__(self, fname):
+        super().__init__(open(fname, 'r'))
+
+        found_experiments = None
+        saved_exp = None
+        start = True
+
+        for row in self:
+            if start:
+                saved_exp = row
+                found_experiments = pd.DataFrame(columns = list(saved_exp.keys()))
+                start = False
+            else:
+
+                for k in list(saved_exp.keys()):
+                    if saved_exp[k].strip() != row[k].strip() and row[k].strip() != "":
+                        saved_exp[k] = row[k]
+            
+            found_experiments = pd.concat([found_experiments, 
+                                           pd.DataFrame(saved_exp, columns = list(saved_exp.keys()), index=[0])], 
+                                           ignore_index=True)
+        
+        found_experiments = found_experiments[found_experiments["Sample type"] == "H2O"]
+        found_experiments = found_experiments[found_experiments["Use strain-rate minimum or peak stress data?"] == "YES"]
+        
+        self.found_experiments = found_experiments.reset_index(drop=True)
+
+        
+
+        print(self.found_experiments)
+
+    def get_experiments(self, exps = None):
+        '''
+        Returns Experiment objects of the input pandas table of experiments.
+        If none are input, the currently generated experiments will be used instead.
+        '''
+        if exps == None:
+            exps = self.found_experiments
+
+        results = []
+
+        for row in exps.rows:
+            expt = "ss"
+            if row["Experiment kinematics"].lower() == "uniaxial compression":
+                expt = "uc"
+            if row["Experiment kinematics"].lower() == "extension":
+                expt = "ue"
+            results.append(ObservedExperiment(expt, row["T"], row["Strain rate (/s) at minimum rate/ peak stress as published"]))
+
+            
+
+            
+        
+
+
+
+a = ExperimentReader("observed_data.csv")
