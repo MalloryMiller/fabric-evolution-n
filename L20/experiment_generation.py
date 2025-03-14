@@ -627,6 +627,9 @@ class ExperimentReader(csv.DictReader):
                 for k in list(saved_exp.keys()):
                     if saved_exp[k].strip() != row[k].strip() and row[k].strip() != "":
                         saved_exp[k] = row[k]
+
+            if row["Sample No."] == "": # END OF FILE, all valid experiments have *something* here
+                break
             
             found_experiments = pd.concat([found_experiments, 
                                            pd.DataFrame(saved_exp, columns = list(saved_exp.keys()), index=[0])], 
@@ -634,8 +637,8 @@ class ExperimentReader(csv.DictReader):
         
         found_experiments = found_experiments[found_experiments["Sample type"] == "H2O"]
         found_experiments = found_experiments[found_experiments["Use strain-rate minimum or peak stress data?"] == "YES"]
-        
         self.found_experiments = found_experiments.reset_index(drop=True)
+        print(len(found_experiments[found_experiments["Source"] == "Qi & Goldsby (2021)"]))
 
         
 
@@ -657,13 +660,12 @@ class ExperimentReader(csv.DictReader):
                 expt = "uc"
             if row["Experiment kinematics"].lower() == "extension":
                 expt = "ue"
-            results.append(ObservedExperiment(expt, row["T"], row["Strain rate (/s) at minimum rate/ peak stress as published"]))
+            results.append(ObservedExperiment(expt, float(row["T"]), row["Strain rate (/s) at minimum rate/ peak stress as published"]))
 
             
 
-            
-        
+
+OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
 
 
 
-a = ExperimentReader("observed_data.csv")
