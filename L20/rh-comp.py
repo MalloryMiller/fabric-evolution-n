@@ -11,7 +11,7 @@ import matplotlib.gridspec as gridspec
 
 
 CMAP_TEMP = mp.cm.plasma
-CMAP_STRAIN_RATE = mp.cm.copper_r
+CMAP_STRAIN_RATE = mp.cm.copper
 
 '''
  calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
@@ -19,7 +19,7 @@ CMAP_STRAIN_RATE = mp.cm.copper_r
 
 
 
-def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True):
+def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = "cache"):
     '''
     ex is a list of Experiment objects which have already been generated as an .nc file
     T is the time the strain was over
@@ -64,7 +64,7 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True):
     n_hist(fig, ax_Enlin_n_rate, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs", which_ns = 'avg_st_rate')
 
     os.makedirs("output", exist_ok=True)
-    fout = f'output/cache.png'
+    fout = f'output/{fname}.png'
     print('Saving %s'%(fout))
     plt.savefig(fout, dpi=dpi)
     plt.close('all')
@@ -189,17 +189,20 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 scope = []
 
-for x in SS:
+EXP_TYPE = EXP
+
+for x in EXP_TYPE:
     for tem in TEMPS:
         
         if x != "ss" :
-            e1 = Experiment(x, "zz", temp = tem) 
+            e1 = GeneratedExperiment(x, "zz", temp = tem) 
         else:
-            e1 = Experiment(x, "xz", temp = tem) 
+            e1 = GeneratedExperiment(x, "xz", temp = tem) 
 
         print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
         scope.append(e1)
 
 
-plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False)
+    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
+    #scope = []
 

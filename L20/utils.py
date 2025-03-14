@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from lagrange_gen import Experiment
+from experiment_generation import GeneratedExperiment, Experiment
 
 MAX_TEMP = 0
 MIN_TEMP = -30

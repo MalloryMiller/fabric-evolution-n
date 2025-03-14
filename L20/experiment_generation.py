@@ -26,10 +26,7 @@ def apply_formula(formula, x):
     c = formula[1]
     return (x * m) + c
 
-
 class Experiment():
-
-    
 
     def __init__(self, exptype, ijstr, 
                  temp = None, lambd = True, 
@@ -83,6 +80,40 @@ class Experiment():
             self.strain_target = deformation
         
         self.strain_to_use = self.strain_target
+
+
+        pass
+    def get_dataframe(self, m=0):
+        """
+        Gets the dataframe from the file for the data at axis m. 
+        For a file generated with rectify=true, m=0 will always give the vertical component, for example
+        """
+
+        results = {
+            "strain": [], 
+            "linear_enhancement": [], 
+            "nonlinear_enhancement": [], 
+            "eigval": [],
+            "temp": [],
+            "exp": []
+            }
+
+        return pd.DataFrame(
+            data = results
+        )
+
+
+class GeneratedExperiment(Experiment) :
+
+    
+
+    def __init__(self, exptype, ijstr, 
+                 temp = None, lambd = True, 
+                 timesteps = TIMESTEPS, truncation = L, deformation = None):
+        super().__init__(exptype, ijstr, 
+                 temp=temp, lambd=lambd, 
+                 timesteps=timesteps, truncation=truncation, deformation=deformation)
+        
         if exptype == 'ss' or exptype == 'rr': 
             self.strain_to_use = np.deg2rad(self.strain_target)
 
