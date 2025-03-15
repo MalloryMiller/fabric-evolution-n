@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import csv
+import matplotlib.pyplot as plt
 
 from netCDF4 import Dataset
 
@@ -635,14 +636,34 @@ class ExperimentReader(csv.DictReader):
                                            pd.DataFrame(saved_exp, columns = list(saved_exp.keys()), index=[0])], 
                                            ignore_index=True)
         
-        found_experiments = found_experiments[found_experiments["Sample type"] == "H2O"]
-        found_experiments = found_experiments[found_experiments["Use strain-rate minimum or peak stress data?"] == "YES"]
-        self.found_experiments = found_experiments.reset_index(drop=True)
+        self.found_experiments = found_experiments
+
+
+        self.keep_where("Sample type", "H2O")
+        self.drop_where("T", "N/A")
+        self.drop_where("Strain rate (/s) at tertiary strain rate/ flow stress as published", "N/A")
+
+
+        self.found_experiments = self.found_experiments.reset_index(drop=True)
         print(len(found_experiments[found_experiments["Source"] == "Qi & Goldsby (2021)"]))
 
         
 
         print(self.found_experiments)
+
+
+    def keep_where(self, column, is_value, data = None):
+        if data == None:
+            self.found_experiments = self.found_experiments[self.found_experiments[column] == is_value].drop(column, axis=1)
+        else:
+            data = data[data[column] == is_value].drop(column, axis=1)
+
+    def drop_where(self, column, is_value, data = None):
+        if data == None:
+            self.found_experiments = self.found_experiments[self.found_experiments[column] != is_value]
+        else:
+            data = data[data[column] != is_value]
+
 
     def get_experiments(self, exps = None):
         '''
@@ -661,11 +682,27 @@ class ExperimentReader(csv.DictReader):
             if row["Experiment kinematics"].lower() == "extension":
                 expt = "ue"
             results.append(ObservedExperiment(expt, float(row["T"]), row["Strain rate (/s) at minimum rate/ peak stress as published"]))
+    
+    
+    def demonstrative_chart(self):
 
+        x = self.found_experiments["T"].astype(float)
+        y = self.found_experiments["Strain rate (/s) at tertiary strain rate/ flow stress as published"].astype(float)
+        
+        plt.scatter(x, y)
+        plt.xlabel("Temperature")
+        plt.ylabel("Strain rate per second")
+
+        os.makedirs("output", exist_ok=True)
+        fout = f'output/obervations.png'
+        print('Saving %s'%(fout))
+        plt.savefig(fout)
+        plt.close('all')
+        print('Saved %s'%(fout))
             
 
 
 OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
-
+OBSERVATIONS_READER.demonstrative_chart()
 
 
