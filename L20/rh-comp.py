@@ -27,19 +27,21 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
     '''
 
     dpi, scale = 200, 3.3
-    fig = plt.figure(figsize=(4*scale,6.5*scale))
-    gs = gridspec.GridSpec(4,2, height_ratios=[1,1,.75,.75], width_ratios=[1,1])
+    fig = plt.figure(figsize=(4*scale,8.5*scale))
+    gs = gridspec.GridSpec(5,2, height_ratios=[1,1,.75,.75,.75], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
 
 
-    ax_Elin           = plt.subplot(gs[0, 0])
-    ax_Enlin          = plt.subplot(gs[0, 1])
-    ax_Elin_E         = plt.subplot(gs[1, 0])
-    ax_Enlin_E        = plt.subplot(gs[1, 1])
-    ax_Elin_n_temp    = plt.subplot(gs[2, 0])
-    ax_Enlin_n_temp   = plt.subplot(gs[2, 1])
-    ax_Elin_n_rate    = plt.subplot(gs[3, 0])
-    ax_Enlin_n_rate   = plt.subplot(gs[3, 1])
+    ax_Elin               = plt.subplot(gs[0, 0])
+    ax_Enlin              = plt.subplot(gs[0, 1])
+    ax_Elin_E             = plt.subplot(gs[1, 0])
+    ax_Enlin_E            = plt.subplot(gs[1, 1])
+    ax_Elin_n_temp        = plt.subplot(gs[2, 0])
+    ax_Enlin_n_temp       = plt.subplot(gs[2, 1])
+    ax_Elin_n_rate        = plt.subplot(gs[3, 0])
+    ax_Enlin_n_rate        = plt.subplot(gs[3, 1])
+    ax_Elin_n_temp_extr    = plt.subplot(gs[4, 0])
+    ax_Enlin_n_temp_extr   = plt.subplot(gs[4, 1])
     
     current_slopes = {}
 
@@ -62,6 +64,9 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
 
     n_hist(fig, ax_Elin_n_rate, current_slopes[ax_Elin_E],"Nonlinear Sachs", which_ns = 'avg_st_rate')
     n_hist(fig, ax_Enlin_n_rate, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs", which_ns = 'avg_st_rate')
+
+    extremes_hist(fig, ax_Elin_n_temp_extr, current_slopes[ax_Elin_E],"Nonlinear Sachs")
+    extremes_hist(fig, ax_Enlin_n_temp_extr, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
 
     os.makedirs("output", exist_ok=True)
     fout = f'output/{fname}.png'
@@ -102,6 +107,41 @@ def add_slope(ax, slope_dict):
             
             transform=ax.transAxes, horizontalalignment='left', verticalalignment='top',
             bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
+    
+
+def extremes_hist(fig, ax, ns, Etype, which_ns = 'temp'):
+    datas = []
+
+    min_ns = np.min(ns[which_ns].unique())
+    max_ns = np.max(ns[which_ns].unique())
+    temps = [min_ns, max_ns]
+    min_datas = np.min([np.min(ns.ns[ns[which_ns] == min_ns]), np.min(ns.ns[ns[which_ns] == max_ns])])
+    max_datas = np.max([np.max(ns.ns[ns[which_ns] == min_ns]), np.max(ns.ns[ns[which_ns] == max_ns])])
+    datas.append(ns.ns[ns[which_ns] == min_ns])
+    datas.append(ns.ns[ns[which_ns] == max_ns])
+    bin_count = 20
+
+    bins = []
+
+    for x in range(bin_count + 1):
+        bins.append(min_datas + (x * ((max_datas - min_datas) / bin_count)))
+
+    print("TEMPS", temps)
+
+
+    ax.hist(datas[0], density=True, rwidth=0.95, stacked = False, alpha=.75, color="darkslateblue", label=str(temps[0]) + " °C", bins = bins)
+    ax.hist(datas[1], density=True, rwidth=0.95, stacked = False, alpha=.75, color="gold", label=str(temps[1]) +  " °C", bins = bins)
+
+    #ax.bar(n, bins, histtype='bar', rwidth=0.95, stacked = True)
+    title = str(Etype) + " n Values"
+    ax.set_title(title)
+    ax.set_xlabel("n Value")
+    ax.set_ylabel("Count")
+    ax.legend()
+
+
+
+
 
 
 def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
@@ -163,7 +203,7 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
 
     
-    data = ax.scatter(x_, y_, label=str(ex.temp) + "°C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
+    data = ax.scatter(x_, y_, label=str(ex.temp) + " °C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
 
     ax.set_xlabel('Target Change')
 
@@ -203,6 +243,6 @@ for x in EXP_TYPE:
         scope.append(e1)
 
 
-    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
-    #scope = []
+    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False, fname=x)
+    scope = []
 

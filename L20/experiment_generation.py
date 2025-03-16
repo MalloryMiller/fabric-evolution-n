@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import csv
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 from netCDF4 import Dataset
 
@@ -641,7 +642,9 @@ class ExperimentReader(csv.DictReader):
 
         self.keep_where("Sample type", "H2O")
         self.drop_where("T", "N/A")
-        self.drop_where("Strain rate (/s) at tertiary strain rate/ flow stress as published", "N/A")
+        self.drop_where("Source", "Goldsby & Kohlstedt (1997)") #brokn
+        self.drop_where("Strain rate (/s) at minimum rate/ peak stress as published", "N/A")
+
 
 
         self.found_experiments = self.found_experiments.reset_index(drop=True)
@@ -653,12 +656,20 @@ class ExperimentReader(csv.DictReader):
 
 
     def keep_where(self, column, is_value, data = None):
+        '''
+        Keeps all rows of data (or if data == None, self.found_experiments) where column matches is_value.
+        Removes the column afterwards to avoid bloat.
+        '''
         if data == None:
             self.found_experiments = self.found_experiments[self.found_experiments[column] == is_value].drop(column, axis=1)
         else:
             data = data[data[column] == is_value].drop(column, axis=1)
 
     def drop_where(self, column, is_value, data = None):
+        '''
+        Removes all rows of data (or if data == None, self.found_experiments) where column matches is_value.
+        DOES NOT remove the column afterwards.
+        '''
         if data == None:
             self.found_experiments = self.found_experiments[self.found_experiments[column] != is_value]
         else:
@@ -684,14 +695,34 @@ class ExperimentReader(csv.DictReader):
             results.append(ObservedExperiment(expt, float(row["T"]), row["Strain rate (/s) at minimum rate/ peak stress as published"]))
     
     
-    def demonstrative_chart(self):
+    def demonstrative_chart(self, 
+                            x_name = "T", 
+                            y_name = "Strain rate (/s) at minimum rate/ peak stress as published"):
+        colors = [mpl.colormaps['tab20'].colors,
+                  mpl.colormaps['tab20b'].colors,
+                  mpl.colormaps['tab20c'].colors]
+        colors_i = 0
+        used_colors = 0
+        print(colors[1][0])
 
-        x = self.found_experiments["T"].astype(float)
-        y = self.found_experiments["Strain rate (/s) at tertiary strain rate/ flow stress as published"].astype(float)
-        
-        plt.scatter(x, y)
-        plt.xlabel("Temperature")
-        plt.ylabel("Strain rate per second")
+        x = self.found_experiments[x_name].str.lower().astype(float)
+        y = self.found_experiments[y_name].str.lower().astype(float)
+
+
+        for i, srcs in enumerate(self.found_experiments["Source"].unique()):
+            if i == len(colors[colors_i]):
+                colors_i += 1
+                used_colors = i
+            x_ = x[self.found_experiments["Source"] == srcs]
+            y_ = y[self.found_experiments["Source"] == srcs]
+            plt.scatter(x_, y_, label=srcs.replace("&", "\&"), 
+                        color = colors[colors_i][i - used_colors])
+
+
+        plt.title("Example Graph of Observed Data")
+        plt.xlabel(x_name)
+        plt.ylabel(y_name)
+        plt.legend(fontsize=7)
 
         os.makedirs("output", exist_ok=True)
         fout = f'output/obervations.png'
