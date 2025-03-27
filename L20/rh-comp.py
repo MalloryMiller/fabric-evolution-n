@@ -148,7 +148,7 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     datas = []
     temps = []
 
-    for t in ns[which_ns].unique():
+    for t in np.sort(ns[which_ns].unique()):
         temps.append(t)
         datas.append(ns.ns[ns[which_ns] == t])
         
@@ -243,6 +243,6 @@ for x in EXP_TYPE:
         scope.append(e1)
 
 
-    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False, fname=x)
+    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
     scope = []
 
