@@ -21,7 +21,7 @@ strain_over_time = 2e-1  # per year
 Eij_factor = 1
 
 Eij_cutoff_factor = 10000
-
+Eij_cutoff_threshhold = 0.0000000001
 
 
 EXP = ["uc", "ss", "cc", "ue"]
@@ -44,7 +44,8 @@ def get_range(Es):
     Eij_cutoff = (np.max(Es) - np.min(Es))/Eij_cutoff_factor
     while i < len(Es):
         to_test.append(Es[i-1] - Es[i])
-        if np.abs(Es[i-1] - Es[i]) < Eij_cutoff:
+        if np.abs(Es[i-1] - Es[i]) < Eij_cutoff and \
+            np.sign(Es[i-1]) == np.sign(Es[i]):
             return i
         i += 1
 
@@ -58,8 +59,8 @@ def cut_to_range(Cut, Es):
     Es  : where the range being cut of is derived
     '''
     i = get_range(Es)
+    
     return Cut[:i]
-
 
 
 def get_balanced_average(x, y, temp = 0):

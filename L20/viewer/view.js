@@ -116,7 +116,7 @@ function update() {
     
 
 
-    settings += "/lam/" + L + "/"
+    settings += "/"
     settings += Number(document.getElementById("tar").value).toFixed(6);
 
     console.log(base_file + settings + target_frame);

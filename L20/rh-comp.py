@@ -26,7 +26,7 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
 
     '''
 
-    dpi, scale = 200, 3.3
+    dpi, scale = 400, 3.3
     fig = plt.figure(figsize=(4*scale,8.5*scale))
     gs = gridspec.GridSpec(5,2, height_ratios=[1,1,.75,.75,.75], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
@@ -126,7 +126,6 @@ def extremes_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     for x in range(bin_count + 1):
         bins.append(min_datas + (x * ((max_datas - min_datas) / bin_count)))
 
-    print("TEMPS", temps)
 
 
     ax.hist(datas[0], density=True, rwidth=0.95, stacked = False, alpha=.75, color="darkslateblue", label=str(temps[0]) + " °C", bins = bins)
@@ -182,8 +181,12 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
 
 
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
-    df = ex.get_dataframe()
+    if (ex.exptype == "ss"):
+        df = ex.get_dataframe(4)
+    else:
+        df = ex.get_dataframe()
     df.strain = np.abs(df.strain)
+    #print("EX", ex)
 
     y_ = df.strain / t # strain rate 
     if use_Eij:
@@ -204,9 +207,6 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
     
     data = ax.scatter(x_, y_, label=str(ex.temp) + " °C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
-
-    ax.set_xlabel('Target Change')
-
 
     ax.set_xlabel("log(Tau)")
 
@@ -243,6 +243,6 @@ for x in EXP_TYPE:
         scope.append(e1)
 
 
-    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
+    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False, fname=x)
     scope = []
 

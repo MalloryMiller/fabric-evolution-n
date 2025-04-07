@@ -1,4 +1,4 @@
-from lagrange_gen import Experiment, TIMESTEPS
+from experiment_generation import GeneratedExperiment, TIMESTEPS
 import threading
 
 
@@ -20,9 +20,9 @@ def run(action, exptypes = EXP_TYPES, temps = TEMPS):
             print(exp, tem)
             
             if exp != "ss" :
-                e1 = Experiment(exp, "zz", temp = tem) 
+                e1 = GeneratedExperiment(exp, "zz", temp = tem) 
             else:
-                e1 = Experiment(exp, "xz", temp = tem) 
+                e1 = GeneratedExperiment(exp, "xz", temp = tem) 
 
             print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
             action(e1)
@@ -33,11 +33,11 @@ def create_ncs(experiment):
 
 
 def create_images(experiment):
-    experiment.load_solution(IMAGES, isolate=True, remake = False)
+    experiment.load_solution([TIMESTEPS], isolate=True, remake = True)
 
 
 def main():
-    run(create_ncs, ['ss'], TEMPS)
-    #run(create_images, EXP_TYPES, TEMPS)
+    #run(create_ncs, EXP_TYPES, TEMPS)
+    run(create_images, EXP_TYPES, TEMPS)
 
 main()

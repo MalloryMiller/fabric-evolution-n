@@ -4,6 +4,7 @@ import os
 import csv
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from math import atan
 
 from netCDF4 import Dataset
 
@@ -152,18 +153,24 @@ class GeneratedExperiment(Experiment) :
 
         temp = np.array([self.temp] * len(steps))
         expt = np.array([self.exptype] * len(steps))
+        m1,m2,m3 = loadvar('m1'), loadvar('m2'), loadvar('m3')
+        p1,p2,p3 = loadvar('p1'), loadvar('p2'), loadvar('p3')
+        
 
         if self.exptype == "ss":
             steps = np.tan(np.deg2rad(steps))
+
+        #print(vert[0])
+        print(Eij_lin[:,m])
 
 
         results = {
             "strain": steps, 
             "linear_enhancement": Eij_lin[:,m], 
             "nonlinear_enhancement": Eij_nlin[:,m], 
-            "eigval": eigvals[:,m],
+            "eigval": eigvals[:,m%3],
             "temp": temp,
-            "exp": expt
+            "exp": expt,
             }
 
         return pd.DataFrame(
@@ -191,15 +198,13 @@ class GeneratedExperiment(Experiment) :
 
 
         if os.path.isfile(self.fname):
+            
             return self.fname
         else:
             return None
         
 
         
-
-
-
 
 
 
@@ -248,14 +253,27 @@ class GeneratedExperiment(Experiment) :
 
             c = nlm[tt,:]
             #c[:] = sf.rotate_nlm(sf.rotate_nlm(c[:], -np.pi/3, 0), 0 ,0)
+          
             
-            m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')  # TODO shear
             
-
             if (rectify):
-                m1[tt],m2[tt],m3[tt] = angle_snap(m1[tt,:], m2[tt,:], m3[tt,:])
+                m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
+                if get_vertical_component(m1[tt],m2[tt],m3[tt]) == -1:
+                    print(get_vertical_component(m1[tt],m2[tt],m3[tt]), m1[tt],m2[tt],m3[tt])
+                    print("\n\nMS HERE: ", m1[tt],m2[tt],m3[tt])
+                    print("ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
+                    
+                    adjusted_nlm = sf.rotate_nlm(c, -np.arctan(m1[tt][0]), -np.arctan(m1[tt][1]))
+
+                    c = adjusted_nlm
+
+                    m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')            
+                    print("NEWWWW ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
             
+                    print("NOEWW MS HERE: ", m1[tt],m2[tt],m3[tt])
+            
+            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')  # TODO shear
+            m1[tt],m2[tt],m3[tt] =  [0,0,1], [0,1,0], [1,0,0]
 
 
             # Linear (n'=1) mixed Taylor--Sachs enhancements            
@@ -266,7 +284,6 @@ class GeneratedExperiment(Experiment) :
             Eij_nlin[tt,:]  = sf.Eij_tranisotropic(c, m1[tt,:],m2[tt,:],m3[tt,:], Eij_grain_nlin, alpha_nlin, n_grain_nlin)
             Epij_nlin[tt,:] = sf.Eij_tranisotropic(c, p1[tt,:],p2[tt,:],p3[tt,:], Eij_grain_nlin, alpha_nlin, n_grain_nlin)
         
-
         #----------------------
         # Save
         #----------------------
@@ -400,10 +417,6 @@ class GeneratedExperiment(Experiment) :
             
             ax_ODF.set_global() # be sure to show entire S^2
                                     
-            # CORRECT ROTATION (SHEAR)
-
-            vertical_component = get_vertical_component(m1[tt],m2[tt],m3[tt])
-
 
             #Eij_lin[tt,:] = sf.Eij_tranisotropic(c, m1[tt,:], m2[tt,:], m3[tt,:], Eij_grain_lin, alpha_lin, n_grain_lin)
             
@@ -426,6 +439,9 @@ class GeneratedExperiment(Experiment) :
             
             steps = np.arange(len(eigvals[:,0]))
             steps = self.get_pressure(steps)
+
+            # CORRECT ROTATION (SHEAR)
+            vertical_component = get_vertical_component(m1[tt],m2[tt],m3[tt])
 
             if (vertical_component == 0 or not isolate):
                 ax_eigvals.plot(steps,eigvals[:,0], '-', c=sfplt.c_red,   label='$a_{1}$', lw=lw0)
@@ -473,36 +489,42 @@ class GeneratedExperiment(Experiment) :
             lblm = lambda ii,jj: '$E_{m_%i m_%i}$'%(ii+1,jj+1)
             lblp = lambda ii,jj: '$E_{p_%i p_%i}$'%(ii+1,jj+1)
 
-            def plot_enhancements(ax, Eij, Epij):
+            def plot_enhancements(ax, Eij, Epij, steps=steps):
+
+                if self.exptype == 'ss':
+                    steps = np.tan(np.deg2rad(steps))
 
                 
-                if not isolate or vertical_component == 0:
+                if not isolate or (vertical_component == 0 and self.exptype != 'ss'):
                     ax.semilogy(steps, Eij[:,0], '-', c=sfplt.c_red,   label=lblm(0,0), lw=lw0)
-                if not isolate or vertical_component == 1:
+                if not isolate or (vertical_component == 1 and self.exptype != 'ss'):
                     ax.semilogy(steps, Eij[:,1], '-', c=sfplt.c_green, label=lblm(1,1), lw=lw1)
-                if not isolate or vertical_component == 2:
+                if not isolate or (vertical_component == 2 and self.exptype != 'ss'):
                     ax.semilogy(steps, Eij[:,2], '-', c=sfplt.c_blue,  label=lblm(2,2), lw=lw2)    
                     
+                if not isolate or self.exptype=='ss':
+                    if self.exptype == 'ss':
+                        c = sfplt.c_red
+                    else:
+                        c = sfplt.c_lblue
+
+                    ax.semilogy(steps, Eij[:,4], ':', c=c,  label=lblm(0,2), lw=lw1)
                 if not isolate:
                     ax.semilogy(steps, Eij[:,3], ':', c=sfplt.c_lgreen, label=lblm(1,2), lw=lw2)
-                    ax.semilogy(steps, Eij[:,4], ':', c=sfplt.c_lblue,  label=lblm(0,2), lw=lw1)
                     ax.semilogy(steps, Eij[:,5], ':', c=sfplt.c_lred,   label=lblm(0,1), lw=lw0)
 
                     Eratio = np.divide(Eij[:,5], Epij[:,5])
                     ax.semilogy(steps, Epij[:,5], '-', c=sfplt.c_gray, label=lblp(0,1), lw=lw2) 
                     ax.semilogy(steps, Eratio, '--', c=sfplt.c_gray, label=lblm(0,1)+'/'+lblp(0,1), lw=lw2)
 
-                xlims=[0, self.get_pressure(Nt+1)]
+                xlims=[0, steps[-1]+.01]
                 ax.semilogy(xlims, [2.5,2.5], '--k', lw=1) 
                 ax.semilogy(xlims, [4.375,4.375], '--k', lw=1)
                 ax.set_xlim(xlims)
                 ax.set_ylim(1e-1, 1e1)
                 #ax.set_ylim([np.amin([1e-1, np.amin(Eij[:]), np.amin(Epij[:])]), np.amax([1e+1, np.amax(Eij[:]), np.amax(Epij[:]), np.amax(Eratio)])])
                 
-                if self.exptype == "ss":
-                    ax.set_xlabel('Target Angle')
-                else:
-                    ax.set_xlabel('Target Change')
+                ax.set_xlabel('Total Strain')
 
                 ax.set_ylabel('$E_{vw}$')
                 ax.grid()
@@ -557,7 +579,6 @@ def reduce(n):
         return round(n, 5)
     
 
-
 def angle_snap(e1, e2, e3):
     a = [1,0,0] #top
     b = [-0,1,0]
@@ -569,21 +590,21 @@ def angle_snap(e1, e2, e3):
     for x in range(len(og)):
         order.append(np.argmax(np.abs(og[:,x])))
         
-    print([options[order[0]], options[order[1]], options[order[2]]])
     return [options[2], options[1], options[0]]
 
 
 
     
 def get_vertical_component(m1,m2,m3):
+    #print(m1,m2,m3)
 
-    if (m1[2] == 1):
+    if (np.abs(m1[2]) == 1):
         return 0
-    if (m2[2] == 1):
+    if (np.abs(m2[2]) == 1):
         return 1
-    if (m3[2] == 1):
+    if (np.abs(m3[2]) == 1):
         return 2
-    return None
+    return -1
 
 
 
@@ -652,8 +673,6 @@ class ExperimentReader(csv.DictReader):
 
         
 
-        print(self.found_experiments)
-
 
     def keep_where(self, column, is_value, data = None):
         '''
@@ -703,7 +722,6 @@ class ExperimentReader(csv.DictReader):
                   mpl.colormaps['tab20c'].colors]
         colors_i = 0
         used_colors = 0
-        print(colors[1][0])
 
         x = self.found_experiments[x_name].str.lower().astype(float)
         y = self.found_experiments[y_name].str.lower().astype(float)

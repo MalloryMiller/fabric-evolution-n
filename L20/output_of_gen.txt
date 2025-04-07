@@ -1,0 +1,11 @@
+18
+Saving output/obervations.png
+Saved output/obervations.png
+cc -30
+GAMMA: 0.3, LAMD: 0.15, TEMP: -30, EXP: cc
+D: [[ 1.  0.  0.]
+ [ 0.  0.  0.]
+ [ 0.  0. -1.]] 
+W: [[0. 0. 0.]
+ [0. 0. 0.]
+ [0. 0. 0.]]
