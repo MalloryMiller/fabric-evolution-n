@@ -227,22 +227,48 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     return data
 
 
-scope = []
 
-EXP_TYPE = EXP
-
-for x in EXP_TYPE:
-    for tem in TEMPS:
-        
-        if x != "ss" :
-            e1 = GeneratedExperiment(x, "zz", temp = tem) 
-        else:
-            e1 = GeneratedExperiment(x, "xz", temp = tem) 
-
-        print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
-        scope.append(e1)
-
-
-    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
+def generate_charts():
     scope = []
 
+    EXP_TYPE = EXP
+
+    for x in EXP_TYPE:
+        for tem in TEMPS:
+            
+            if x != "ss" :
+                e1 = GeneratedExperiment(x, "zz", temp = tem) 
+            else:
+                e1 = GeneratedExperiment(x, "xz", temp = tem) 
+
+            print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+            scope.append(e1)
+
+        plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
+        scope = []
+
+
+def generate_charts_w_ref():
+    scope = []
+
+    EXP_TYPE = EXP
+
+    for x in EXP_TYPE:
+        for tem in TEMPS:
+            
+            if x != "ss" :
+                e1 = GeneratedExperiment(x, "zz", temp = tem) 
+            else:
+                e1 = GeneratedExperiment(x, "xz", temp = tem) 
+
+            print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+            scope.append(e1)
+
+
+        OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
+        OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
+        OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
+        plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=True, fname=x)
+        scope = []
+
+generate_charts_w_ref()

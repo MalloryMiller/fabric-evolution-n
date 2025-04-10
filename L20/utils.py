@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from experiment_generation import GeneratedExperiment, Experiment
+from experiment_generation import GeneratedExperiment, ExperimentReader
 
 MAX_TEMP = 0
 MIN_TEMP = -30

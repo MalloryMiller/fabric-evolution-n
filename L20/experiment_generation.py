@@ -612,8 +612,11 @@ class ObservedExperiment(Experiment):
 
 
 class ExperimentReader(csv.DictReader):
-    def __init__(self, fname):
+    def __init__(self, fname, y_name = "Strain rate (/s) at tertiary strain rate/ flow stress as published",
+                 x_name = "Stress (MPa) at tertiary strain rate/ flow stress as published"):
         super().__init__(open(fname, 'r'))
+        self.x_name = x_name
+        self.y_name = y_name
 
         found_experiments = None
         saved_exp = None
@@ -641,9 +644,11 @@ class ExperimentReader(csv.DictReader):
 
 
         self.keep_where("Sample type", "H2O")
-        self.drop_where("T", "N/A")
+        self.drop_where(x_name, "N/A")
+        self.drop_where(x_name, "<1")
         self.drop_where("Source", "Goldsby & Kohlstedt (1997)") #brokn
-        self.drop_where("Strain rate (/s) at minimum rate/ peak stress as published", "N/A")
+        self.drop_where(y_name, "N/A")
+        self.drop_where(y_name, "<1")
 
 
 
@@ -686,18 +691,21 @@ class ExperimentReader(csv.DictReader):
 
         results = []
 
-        for row in exps.rows:
-            expt = "ss"
-            if row["Experiment kinematics"].lower() == "uniaxial compression":
-                expt = "uc"
-            if row["Experiment kinematics"].lower() == "extension":
-                expt = "ue"
-            results.append(ObservedExperiment(expt, float(row["T"]), row["Strain rate (/s) at minimum rate/ peak stress as published"]))
+        if exps == "uc":
+            return self.found_experiments[self.found_experiments["Experiment kinematics"] == "Uniaxial compression"]
+        
+        if exps == "ue":
+            return self.found_experiments[self.found_experiments["Experiment kinematics"] == "Extension"]
+        
+        if exps == "cc":
+            return self.found_experiments[self.found_experiments["Experiment kinematics"] == "Confined compression"]
+        
+        return self.found_experiments[self.found_experiments["Experiment kinematics"] == "Simple shear"]
+            
     
     
     def demonstrative_chart(self, 
-                            x_name = "T", 
-                            y_name = "Strain rate (/s) at minimum rate/ peak stress as published"):
+                            fname = 'observations'):
         colors = [mpl.colormaps['tab20'].colors,
                   mpl.colormaps['tab20b'].colors,
                   mpl.colormaps['tab20c'].colors]
@@ -705,8 +713,8 @@ class ExperimentReader(csv.DictReader):
         used_colors = 0
         print(colors[1][0])
 
-        x = self.found_experiments[x_name].str.lower().astype(float)
-        y = self.found_experiments[y_name].str.lower().astype(float)
+        x = self.found_experiments[self.x_name].str.lower().astype(float)
+        y = self.found_experiments[self.y_name].str.lower().astype(float)
 
 
         for i, srcs in enumerate(self.found_experiments["Source"].unique()):
@@ -720,12 +728,12 @@ class ExperimentReader(csv.DictReader):
 
 
         plt.title("Example Graph of Observed Data")
-        plt.xlabel(x_name)
-        plt.ylabel(y_name)
+        plt.xlabel(self.x_name)
+        plt.ylabel(self.y_name)
         plt.legend(fontsize=7)
 
         os.makedirs("output", exist_ok=True)
-        fout = f'output/obervations.png'
+        fout = f'output/{fname}' 
         print('Saving %s'%(fout))
         plt.savefig(fout)
         plt.close('all')
