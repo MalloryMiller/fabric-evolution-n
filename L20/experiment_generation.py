@@ -656,11 +656,7 @@ class ExperimentReader(csv.DictReader):
 
 
         self.found_experiments = self.found_experiments.reset_index(drop=True)
-        print(len(found_experiments[found_experiments["Source"] == "Qi & Goldsby (2021)"]))
 
-        
-
-        print(self.found_experiments)
 
 
     def keep_where(self, column, is_value, data = None):
@@ -716,8 +712,8 @@ class ExperimentReader(csv.DictReader):
             x *= YEAR # convert to per year from per second
         if ("/s" in self.y_name):
             y *= YEAR # convert to per year from per second
-        x = np.log(x)
-        y = np.log(y)
+        #x = np.log(x)
+        #y = np.log(y)
 
         sources = self.found_experiments["Source"].unique()
         plots = []
@@ -725,9 +721,6 @@ class ExperimentReader(csv.DictReader):
             x_ = x[self.found_experiments["Source"] == srcs]
             y_ = y[self.found_experiments["Source"] == srcs]
             temp_ = temp[self.found_experiments["Source"] == srcs]
-
-            if "Jacka" in srcs:
-                print(srcs, MARKERS[i], x_)
 
             plots.append(fig.scatter(x_, y_, label=srcs.replace("&", "\&"), marker=MARKERS[i], s=15,
                                      norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_))
@@ -742,7 +735,6 @@ class ExperimentReader(csv.DictReader):
                   mpl.colormaps['tab20c'].colors]
         colors_i = 0
         used_colors = 0
-        print(colors[1][0])
 
         x = self.found_experiments[self.x_name].str.lower().astype(float)
         y = self.found_experiments[self.y_name].str.lower().astype(float)

@@ -163,7 +163,7 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     if which_ns == 'avg_st_rate':
         CMAP = CMAP_STRAIN_RATE
         norm = colors.LogNorm(min_ns, max_ns)
-        c_label = "log(Strain Rate x E)"
+        c_label = AXIS_SCALE + "(Strain Rate x E)"
 
 
     h, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
@@ -189,10 +189,10 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
 
     y_ = df.strain / t # strain rate 
     if use_Eij:
-        ax.set_ylabel('log(Strain Rate * E)')
+        ax.set_ylabel(AXIS_SCALE + '(Strain Rate * E)')
         x_ = reverse_glens(df.strain, ex.temp, t, E=df[Eij])
     else:
-        ax.set_ylabel('log(Strain Rate)')
+        ax.set_ylabel(AXIS_SCALE + '(Strain Rate)')
         x_ = reverse_glens(df.strain, ex.temp, t)
 
     temps = [ex.temp] * len(df.strain)
@@ -210,12 +210,12 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     ax.set_xlabel('Target Change')
 
 
-    ax.set_xlabel("log(Tau)")
+    ax.set_xlabel(AXIS_SCALE + "(Tau)")
 
     ax.grid()
     #ax.legend(fontsize=7)
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    ax.set_xscale(AXIS_SCALE)
+    ax.set_yscale(AXIS_SCALE)
     if balanced_average == True:
         slopes[ax] = pd.concat([slopes[ax], get_balanced_average(np.log(x_[1:]), np.log(y_[1:]), temps)], ignore_index=True)
         return data
@@ -250,10 +250,10 @@ def generate_charts():
         scope = []
 
 
-def generate_charts_w_ref():
+def generate_charts_w_ref(use_not_tertiary = False):
     scope = []
 
-    EXP_TYPE = UC
+    EXP_TYPE = EXP
 
     for x in EXP_TYPE:
         for tem in TEMPS:
@@ -266,11 +266,16 @@ def generate_charts_w_ref():
             print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
             scope.append(e1)
 
+        if use_not_tertiary:
+            OBSERVATIONS_READER = ExperimentReader("observed_data.csv",
+                                                    y_name = "Strain rate (/s) at minimum rate/ peak stress as published",
+                                                    x_name = "Stress (MPa) at minimum rate/ peak stress as published")
+        else:
+            OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
 
-        OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
         OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
         OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
         plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False, fname=x, observations = OBSERVATIONS_READER)
         scope = []
 
-generate_charts_w_ref()
+generate_charts_w_ref(True)

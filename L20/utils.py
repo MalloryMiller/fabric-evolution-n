@@ -7,7 +7,10 @@ import matplotlib.colors as colors
 MAX_TEMP = 0
 MIN_TEMP = -30
 
-YEAR = 365.25 * 24 * 60 * 60 * 10 #seconds in 10 years
+
+AXIS_SCALE = "log"
+
+YEAR = 365.25 * 24 * 60 * 60  #seconds in 1 years
 
 CRITICAL_TEMP  = 263.15
 IDEAL_GAS = 8.3144621e-3
@@ -26,7 +29,7 @@ CMAP_TEMP = mp.cm.plasma
 CMAP_STRAIN_RATE = mp.cm.copper
 
 
-MARKERS = ["s", "P", "*", "d", "X","p", 
+MARKERS = ["X", "*", "s", "P", "d","p", 
            ">", "<", "^", "v",
            ]
 
