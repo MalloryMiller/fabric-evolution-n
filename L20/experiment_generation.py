@@ -723,7 +723,8 @@ class ExperimentReader(csv.DictReader):
             temp_ = temp[self.found_experiments["Source"] == srcs]
 
             plots.append(fig.scatter(x_, y_, label=srcs.replace("&", "\&"), marker=MARKERS[i], s=15,
-                                     norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_))
+                                     norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_,
+                                     ec="black", lw=.5))
         fig.legend(handles=plots, loc="center right", fontsize=8)
 
     
