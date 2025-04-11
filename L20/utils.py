@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 
-from experiment_generation import GeneratedExperiment, ExperimentReader
+import matplotlib as mp
+import matplotlib.colors as colors
 
 MAX_TEMP = 0
 MIN_TEMP = -30
 
-YEAR = 365.25 * 24 * 60 * 60 #seconds in a year
+YEAR = 365.25 * 24 * 60 * 60 * 10 #seconds in 10 years
 
 CRITICAL_TEMP  = 263.15
 IDEAL_GAS = 8.3144621e-3
@@ -18,9 +19,16 @@ Q_warm = 139
 
 strain_over_time = 2e-1  # per year
 
-Eij_factor = 1
-
 Eij_cutoff_factor = 10000
+
+
+CMAP_TEMP = mp.cm.plasma
+CMAP_STRAIN_RATE = mp.cm.copper
+
+
+MARKERS = ["s", "P", "*", "d", "X","p", 
+           ">", "<", "^", "v",
+           ]
 
 
 

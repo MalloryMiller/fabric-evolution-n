@@ -17,6 +17,7 @@ from scipy.spatial.transform import Rotation
 FS = sfplt.setfont_tex()
 
 
+from utils import *
 
 TIMESTEPS = 1501
 L = 20
@@ -646,7 +647,9 @@ class ExperimentReader(csv.DictReader):
         self.keep_where("Sample type", "H2O")
         self.drop_where(x_name, "N/A")
         self.drop_where(x_name, "<1")
+
         self.drop_where("Source", "Goldsby & Kohlstedt (1997)") #brokn
+
         self.drop_where(y_name, "N/A")
         self.drop_where(y_name, "<1")
 
@@ -702,6 +705,34 @@ class ExperimentReader(csv.DictReader):
         
         return self.found_experiments[self.found_experiments["Experiment kinematics"] == "Simple shear"]
             
+
+    def plot_values(self, fig):
+
+        x = self.found_experiments[self.x_name].str.lower().astype(float)
+        y = self.found_experiments[self.y_name].str.lower().astype(float)
+        temp = self.found_experiments["T"].str.lower().astype(float)
+
+        if ("/s" in self.x_name):
+            x *= YEAR # convert to per year from per second
+        if ("/s" in self.y_name):
+            y *= YEAR # convert to per year from per second
+        x = np.log(x)
+        y = np.log(y)
+
+        sources = self.found_experiments["Source"].unique()
+        plots = []
+        for i, srcs in enumerate(sources):
+            x_ = x[self.found_experiments["Source"] == srcs]
+            y_ = y[self.found_experiments["Source"] == srcs]
+            temp_ = temp[self.found_experiments["Source"] == srcs]
+
+            if "Jacka" in srcs:
+                print(srcs, MARKERS[i], x_)
+
+            plots.append(fig.scatter(x_, y_, label=srcs.replace("&", "\&"), marker=MARKERS[i], s=15,
+                                     norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_))
+        fig.legend(handles=plots, loc="center right", fontsize=8)
+
     
     
     def demonstrative_chart(self, 
