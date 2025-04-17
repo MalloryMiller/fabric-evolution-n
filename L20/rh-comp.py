@@ -181,10 +181,9 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
 
 
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
+    df = ex.get_dataframe()
     if (ex.exptype == "ss"):
         df = ex.get_dataframe(4)
-    else:
-        df = ex.get_dataframe()
     df.strain = np.abs(df.strain)
     #print("EX", ex)
 
