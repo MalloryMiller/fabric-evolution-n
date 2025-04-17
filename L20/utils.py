@@ -1,12 +1,16 @@
 import numpy as np
 import pandas as pd
 
-from experiment_generation import GeneratedExperiment, Experiment
+import matplotlib as mp
+import matplotlib.colors as colors
 
 MAX_TEMP = 0
 MIN_TEMP = -30
 
-YEAR = 365.25 * 24 * 60 * 60 #seconds in a year
+
+AXIS_SCALE = "log"
+
+YEAR = 365.25 * 24 * 60 * 60  #seconds in 1 years
 
 CRITICAL_TEMP  = 263.15
 IDEAL_GAS = 8.3144621e-3
@@ -16,12 +20,19 @@ A0_warm = 1.916e3 * YEAR * 1.0e18
 Q_cold = 60  # kJ / mol
 Q_warm = 139
 
-strain_over_time = 2e-1  # per year
-
-Eij_factor = 1
+time_of_strain = 8e-2  # per year
 
 Eij_cutoff_factor = 10000
-Eij_cutoff_threshhold = 0.0000000001
+
+
+CMAP_TEMP = mp.cm.plasma
+CMAP_STRAIN_RATE = mp.cm.copper
+
+
+MARKERS = ["X", "*", "s", "P", "d","p", 
+           ">", "<", "^", "v",
+           ]
+
 
 
 EXP = ["uc", "ss", "cc", "ue"]
@@ -44,8 +55,7 @@ def get_range(Es):
     Eij_cutoff = (np.max(Es) - np.min(Es))/Eij_cutoff_factor
     while i < len(Es):
         to_test.append(Es[i-1] - Es[i])
-        if np.abs(Es[i-1] - Es[i]) < Eij_cutoff and \
-            np.sign(Es[i-1]) == np.sign(Es[i]):
+        if np.abs(Es[i-1] - Es[i]) < Eij_cutoff:
             return i
         i += 1
 
@@ -59,8 +69,8 @@ def cut_to_range(Cut, Es):
     Es  : where the range being cut of is derived
     '''
     i = get_range(Es)
-    
     return Cut[:i]
+
 
 
 def get_balanced_average(x, y, temp = 0):

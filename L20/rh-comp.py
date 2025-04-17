@@ -1,17 +1,14 @@
 
 from matplotlib.cm import ScalarMappable
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib as mp
 import numpy as np
 import os
 from utils import *
+from experiment_generation import GeneratedExperiment, ExperimentReader
 
 import matplotlib.gridspec as gridspec
 
 
-CMAP_TEMP = mp.cm.plasma
-CMAP_STRAIN_RATE = mp.cm.copper
 
 '''
  calc_a function and associated constants adapted from  https://github.com/icepack/icepack/blob/master/src/icepack/models/viscosity.py
@@ -19,14 +16,14 @@ CMAP_STRAIN_RATE = mp.cm.copper
 
 
 
-def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = "cache"):
+def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = "cache", observations = None):
     '''
     ex is a list of Experiment objects which have already been generated as an .nc file
     T is the time the strain was over
 
     '''
 
-    dpi, scale = 400, 3.3
+    dpi, scale = 200, 3.3
     fig = plt.figure(figsize=(4*scale,8.5*scale))
     gs = gridspec.GridSpec(5,2, height_ratios=[1,1,.75,.75,.75], width_ratios=[1,1])
     #gs.update(left=-0.03, right=1-0.06/3, top=0.97, bottom=0.20, wspace=0.015*18, hspace=0.35)
@@ -48,15 +45,16 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
     cutoff_title = ""
     if cutoff:
         cutoff_title = ""
+
   
     plot_enhancement(ax_Elin, fig, "nonlinear_enhancement", ex, t, current_slopes, "Nonlinear Sachs", 
-                     False, cutoff = cutoff, balanced_average = balanced_average)
+                     False, cutoff = cutoff, balanced_average = balanced_average, observations=observations)
     plot_enhancement(ax_Enlin, fig, "linear_enhancement", ex, t, current_slopes, "Linear mixed Taylor--Sachs", 
-                     False, cutoff = cutoff, balanced_average = balanced_average)
+                     False, cutoff = cutoff, balanced_average = balanced_average, observations=observations)
     plot_enhancement(ax_Elin_E, fig, "nonlinear_enhancement", ex, t, current_slopes, "Nonlinear Sachs", 
-                     cutoff = cutoff, balanced_average = balanced_average)
+                     cutoff = cutoff, balanced_average = balanced_average, observations=observations)
     plot_enhancement(ax_Enlin_E, fig, "linear_enhancement", ex, t, current_slopes, "Linear mixed Taylor--Sachs", 
-                     cutoff = cutoff, balanced_average = balanced_average)
+                     cutoff = cutoff, balanced_average = balanced_average, observations=observations)
 
 
     n_hist(fig, ax_Elin_n_temp, current_slopes[ax_Elin_E],"Nonlinear Sachs")
@@ -76,7 +74,8 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
 
 
 
-def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, use_Eij = True, cutoff = True, balanced_average = True):
+def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, 
+                     use_Eij = True, cutoff = True, balanced_average = True, observations = None):
     results = {
         "ns": [], 
         "temp": [], 
@@ -92,6 +91,9 @@ def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, use_Eij = True, cutoff =
     for x in ex:
         ax_data = generate_plot(ax, Ei, x, t, slopes, use_Eij = use_Eij, cutoff=cutoff, balanced_average = balanced_average)
 
+    if observations != None:
+        observations.plot_values(ax)
+
     ax.set_title(title)
     add_slope(ax, slopes[ax])
     fig.colorbar(ax_data, label = "Temperature (°C)")
@@ -101,11 +103,11 @@ def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, use_Eij = True, cutoff =
 
 
 def add_slope(ax, slope_dict):
-    ax.text(.05,.95, "Average n = " + str(round(np.mean(slope_dict.ns), 2)) + 
+    ax.text(.95,.05, "Average n = " + str(round(np.mean(slope_dict.ns), 2)) + 
             "\n Min n = " + str(round(np.min(slope_dict.ns), 2)) +
             "\n Max n = " + str(round(np.max(slope_dict.ns), 2)), 
             
-            transform=ax.transAxes, horizontalalignment='left', verticalalignment='top',
+            transform=ax.transAxes, horizontalalignment='right', verticalalignment='bottom',
             bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.25'))
     
 
@@ -126,6 +128,7 @@ def extremes_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     for x in range(bin_count + 1):
         bins.append(min_datas + (x * ((max_datas - min_datas) / bin_count)))
 
+    print("TEMPS", temps)
 
 
     ax.hist(datas[0], density=True, rwidth=0.95, stacked = False, alpha=.75, color="darkslateblue", label=str(temps[0]) + " °C", bins = bins)
@@ -160,7 +163,7 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     if which_ns == 'avg_st_rate':
         CMAP = CMAP_STRAIN_RATE
         norm = colors.LogNorm(min_ns, max_ns)
-        c_label = "log(Strain Rate x E)"
+        c_label = AXIS_SCALE + "(Strain Rate x E)"
 
 
     h, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
@@ -181,18 +184,18 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
 
 
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
-    df = ex.get_dataframe()
+    x = 0
     if (ex.exptype == "ss"):
-        df = ex.get_dataframe(4)
+        x = 4 # gets the diagonal part in the direction of the shear
+    df = ex.get_dataframe(x)
     df.strain = np.abs(df.strain)
-    #print("EX", ex)
 
     y_ = df.strain / t # strain rate 
     if use_Eij:
-        ax.set_ylabel('log(Strain Rate * E)')
+        ax.set_ylabel(AXIS_SCALE + '(Strain Rate * E)')
         x_ = reverse_glens(df.strain, ex.temp, t, E=df[Eij])
     else:
-        ax.set_ylabel('log(Strain Rate)')
+        ax.set_ylabel(AXIS_SCALE + '(Strain Rate)')
         x_ = reverse_glens(df.strain, ex.temp, t)
 
     temps = [ex.temp] * len(df.strain)
@@ -207,12 +210,15 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     
     data = ax.scatter(x_, y_, label=str(ex.temp) + " °C", c=temps, s = 2, norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP)
 
-    ax.set_xlabel("log(Tau)")
+    ax.set_xlabel('Target Change')
+
+
+    ax.set_xlabel(AXIS_SCALE + "(Tau)")
 
     ax.grid()
     #ax.legend(fontsize=7)
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    ax.set_xscale(AXIS_SCALE)
+    ax.set_yscale(AXIS_SCALE)
     if balanced_average == True:
         slopes[ax] = pd.concat([slopes[ax], get_balanced_average(np.log(x_[1:]), np.log(y_[1:]), temps)], ignore_index=True)
         return data
@@ -226,22 +232,53 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     return data
 
 
-scope = []
 
-EXP_TYPE = EXP
-
-for x in EXP_TYPE:
-    for tem in TEMPS:
-        
-        if x != "ss" :
-            e1 = GeneratedExperiment(x, "zz", temp = tem) 
-        else:
-            e1 = GeneratedExperiment(x, "xz", temp = tem) 
-
-        print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
-        scope.append(e1)
-
-
-    plot_all_enhancement(scope, strain_over_time, balanced_average="individual", cutoff=False, fname=x)
+def generate_charts():
     scope = []
 
+    EXP_TYPE = EXP
+
+    for x in EXP_TYPE:
+        for tem in TEMPS:
+            
+            if x != "ss" :
+                e1 = GeneratedExperiment(x, "zz", temp = tem) 
+            else:
+                e1 = GeneratedExperiment(x, "xz", temp = tem) 
+
+            print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+            scope.append(e1)
+
+        plot_all_enhancement(scope, time_of_strain, balanced_average="individual", cutoff=True, fname=x)
+        scope = []
+
+
+def generate_charts_w_ref(use_not_tertiary = False):
+    scope = []
+
+    EXP_TYPE = EXP
+
+    for x in EXP_TYPE:
+        for tem in TEMPS:
+            
+            if x != "ss" :
+                e1 = GeneratedExperiment(x, "zz", temp = tem) 
+            else:
+                e1 = GeneratedExperiment(x, "xz", temp = tem) 
+
+            print(f"GAMMA: {e1.Gamma}, LAMD: 0.15, TEMP: {e1.temp}, EXP: {e1.exptype}")
+            scope.append(e1)
+
+        if use_not_tertiary:
+            OBSERVATIONS_READER = ExperimentReader("observed_data.csv",
+                                                    y_name = "Strain rate (/s) at minimum rate/ peak stress as published",
+                                                    x_name = "Stress (MPa) at minimum rate/ peak stress as published")
+        else:
+            OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
+
+        OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
+        OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
+        plot_all_enhancement(scope, time_of_strain, balanced_average="individual", cutoff=False, fname=x, observations = OBSERVATIONS_READER)
+        scope = []
+
+generate_charts_w_ref(True)
