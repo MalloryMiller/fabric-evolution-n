@@ -220,13 +220,13 @@ def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balance
     ax.set_xscale(AXIS_SCALE)
     ax.set_yscale(AXIS_SCALE)
     if balanced_average == True:
-        slopes[ax] = pd.concat([slopes[ax], get_balanced_average(np.log(x_[1:]), np.log(y_[1:]), temps)], ignore_index=True)
+        slopes[ax] = pd.concat([slopes[ax], get_balanced_average(np.log10(x_[1:]), np.log10(y_[1:]), temps)], ignore_index=True)
         return data
     elif balanced_average == "individual":
-        slopes[ax] = pd.concat([slopes[ax], get_individual_slopes(np.log(x_[1:]), np.log(y_[1:]), temps)], ignore_index=True)
+        slopes[ax] = pd.concat([slopes[ax], get_individual_slopes(np.log10(x_[1:]), np.log10(y_[1:]), temps)], ignore_index=True)
         return data
     else:
-        m, b = np.polyfit(np.log(x_[1:]), np.log(y_[1:]), 1)
+        m, b = np.polyfit(np.log10(x_[1:]), np.log10(y_[1:]), 1)
     slopes[ax].append(m)
 
     return data
@@ -256,7 +256,7 @@ def generate_charts():
 def generate_charts_w_ref(use_not_tertiary = False):
     scope = []
 
-    EXP_TYPE = EXP
+    EXP_TYPE = ["ss", "uc"]
 
     for x in EXP_TYPE:
         for tem in TEMPS:
@@ -278,6 +278,7 @@ def generate_charts_w_ref(use_not_tertiary = False):
 
         OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
         OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
+        #OBSERVATIONS_READER.found_experiments.to_csv(x + "_data.csv")
         plot_all_enhancement(scope, time_of_strain, balanced_average="individual", cutoff=False, fname=x, observations = OBSERVATIONS_READER)
         scope = []
 

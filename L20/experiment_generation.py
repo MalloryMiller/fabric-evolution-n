@@ -23,10 +23,15 @@ FS = sfplt.setfont_tex()
 TIMESTEPS = 1501
 L = 20
 
-GAMMA_FORMULA = [ 0.188, 5.94] # [0] + [1]temp
+GAMMA_FORMULA = [ 0.176, 6.09] # [0] + [1]temp, from https://www.sciencedirect.com/science/article/pii/S0012821X20306622?via%3Dihub#tbl0010
 
 
 def apply_formula(formula, x):
+    '''
+    Applies the input linear formula on x, with the 
+    first item in the list being the slope
+    and the second list item being the constant
+    '''
     m = formula[0]
     c = formula[1]
     return (x * m) + c
@@ -48,7 +53,7 @@ class Experiment():
         self.Gamma = None
         self.lamd = None
         if temp != None:
-            self.Gamma = round(apply_formula(GAMMA_FORMULA, self.temp), 3)
+            self.Gamma = round(apply_formula(GAMMA_FORMULA, self.temp), 3) # enforcing sigfigs
             if lambd != None and lambd != False:
                 self.lamd = 0.15
 
@@ -88,6 +93,8 @@ class Experiment():
 
 
         pass
+
+
     def get_dataframe(self, m=0):
         """
         Gets the dataframe from the file for the data at axis m. 
@@ -106,6 +113,8 @@ class Experiment():
         return pd.DataFrame(
             data = results
         )
+
+
 
 
 class GeneratedExperiment(Experiment) :
@@ -610,29 +619,6 @@ def get_vertical_component(m1,m2,m3):
 
 
 
-class ObservedExperiment(Experiment):
-
-    T_index = 15
-    exp_index = 4
-    strain_rate_index = 36
-
-
-    def __init__(self, exptype, temp, strain_rate):
-
-        self.strain_rate = strain_rate
-        
-
-
-        super().__init__(exptype, "xx", 
-                 temp=temp, lambd=True, 
-                 timesteps=2, truncation=None, deformation=None)
-        
-
-
-        pass
-
-
-
 
 class ExperimentReader(csv.DictReader):
     def __init__(self, fname, y_name = "Strain rate (/s) at tertiary strain rate/ flow stress as published",
@@ -670,12 +656,14 @@ class ExperimentReader(csv.DictReader):
         self.drop_where(x_name, "N/A")
         self.drop_where(x_name, "<1")
 
-        self.drop_where("Source", "Goldsby & Kohlstedt (1997)") #brokn
+        #self.drop_where("Source", "Goldsby & Kohlstedt (1997)") #brokn
 
         self.drop_where(y_name, "N/A")
         self.drop_where(y_name, "<1")
 
-
+        self.found_experiments = self.found_experiments[self.found_experiments['T'].astype(float) < MAX_TEMP]
+        self.found_experiments = self.found_experiments[self.found_experiments['T'].astype(float) > MIN_TEMP]
+        
 
         self.found_experiments = self.found_experiments.reset_index(drop=True)
 
@@ -725,6 +713,13 @@ class ExperimentReader(csv.DictReader):
             
 
     def plot_values(self, fig):
+        '''
+        Plots the values found by the experiment readers onto a given figure, 
+        including a legend for the source of each experiment included.
+
+        If self.x_name or self.y_name include '/s' in the title, will automatically
+        convert the units of that axis to years instead of seconds.
+        '''
 
         x = self.found_experiments[self.x_name].str.lower().astype(float)
         y = self.found_experiments[self.y_name].str.lower().astype(float)
@@ -747,12 +742,16 @@ class ExperimentReader(csv.DictReader):
             plots.append(fig.scatter(x_, y_, label=srcs.replace("&", "\&"), marker=MARKERS[i], s=15,
                                      norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_,
                                      ec="black", lw=.5))
-        fig.legend(handles=plots, loc="center right", fontsize=8)
+        fig.legend(handles=plots, loc="upper left", fontsize=8)
 
     
     
     def demonstrative_chart(self, 
                             fname = 'observations'):
+        '''
+        Creates a demonstrative chart of the data found 
+        using self.x_name and self.y_name as the axes.
+        '''
         colors = [mpl.colormaps['tab20'].colors,
                   mpl.colormaps['tab20b'].colors,
                   mpl.colormaps['tab20c'].colors]
@@ -787,6 +786,6 @@ class ExperimentReader(csv.DictReader):
             
 
 
-OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
-OBSERVATIONS_READER.demonstrative_chart()
+#OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
+#OBSERVATIONS_READER.demonstrative_chart()
 
