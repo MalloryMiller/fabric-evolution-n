@@ -262,27 +262,25 @@ class GeneratedExperiment(Experiment) :
         for tt in np.arange(0,Nt+1):
 
             c = nlm[tt,:]
-            #c[:] = sf.rotate_nlm(sf.rotate_nlm(c[:], -np.pi/3, 0), 0 ,0)
           
             
             
             if (rectify):
-                m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-                if get_vertical_component(m1[tt],m2[tt],m3[tt]) == -1:
-                    print(get_vertical_component(m1[tt],m2[tt],m3[tt]), m1[tt],m2[tt],m3[tt])
-                    print("\n\nMS HERE: ", m1[tt],m2[tt],m3[tt])
-                    print("ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
-                    
-                    adjusted_nlm = sf.rotate_nlm(c, -np.arctan(m1[tt][0]), -np.arctan(m1[tt][1]))
+                 m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
+                 if get_vertical_component(m1[tt],m2[tt],m3[tt]) == -1:
+                     print(get_vertical_component(m1[tt],m2[tt],m3[tt]), m1[tt],m2[tt],m3[tt])
+                     print("\n\nMS HERE: ", m1[tt],m2[tt],m3[tt])
+                     print("ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
+                   
+                     adjusted_nlm = sf.rotate_nlm(c, -np.arctan(m1[tt][0]), -np.arctan(m1[tt][1]))
+                     c = adjusted_nlm
 
-                    c = adjusted_nlm
-
-                    m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')            
-                    print("NEWWWW ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
+                     m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')            
+                     print("NEWWWW ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
             
-                    print("NOEWW MS HERE: ", m1[tt],m2[tt],m3[tt])
+                     print("NOEWW MS HERE: ", m1[tt],m2[tt],m3[tt])
             
-            p1[tt,:],p2[tt,:],p3[tt,:], _             = sf.frame(c, 'p')  # TODO shear
+            m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')   
             m1[tt],m2[tt],m3[tt] =  [0,0,1], [0,1,0], [1,0,0]
 
 
@@ -511,17 +509,13 @@ class GeneratedExperiment(Experiment) :
                     ax.semilogy(steps, Eij[:,1], '-', c=sfplt.c_green, label=lblm(1,1), lw=lw1)
                 if not isolate or (vertical_component == 2 and self.exptype != 'ss'):
                     ax.semilogy(steps, Eij[:,2], '-', c=sfplt.c_blue,  label=lblm(2,2), lw=lw2)    
-                    
-                if not isolate or self.exptype=='ss':
-                    if self.exptype == 'ss':
-                        c = sfplt.c_red
-                    else:
-                        c = sfplt.c_lblue
-
-                    ax.semilogy(steps, Eij[:,4], ':', c=c,  label=lblm(0,2), lw=lw1)
-                if not isolate:
-                    ax.semilogy(steps, Eij[:,3], ':', c=sfplt.c_lgreen, label=lblm(1,2), lw=lw2)
+                
+                if self.exptype == "ss" or not isolate:
                     ax.semilogy(steps, Eij[:,5], ':', c=sfplt.c_lred,   label=lblm(0,1), lw=lw0)
+
+                if not isolate:
+                    ax.semilogy(steps, Eij[:,4], ':', c=sfplt.c_lblue,  label=lblm(0,2), lw=lw1)
+                    ax.semilogy(steps, Eij[:,3], ':', c=sfplt.c_lgreen, label=lblm(1,2), lw=lw2)
 
                     Eratio = np.divide(Eij[:,5], Epij[:,5])
                     ax.semilogy(steps, Epij[:,5], '-', c=sfplt.c_gray, label=lblp(0,1), lw=lw2) 
@@ -555,7 +549,7 @@ class GeneratedExperiment(Experiment) :
             #----------------------
             
             props = dict(boxstyle='square', facecolor='wheat', alpha=0.5)
-            textstr1 = '\n'.join(( r'"%s"'%(self.fname.replace('_', '\_')), r'$L = %i$'%(L) ))
+            textstr1 = '\n'.join(( r'"%s"'%(self.exptype), r'$L = %i$'%(L) ))
             ax_eigvals.text(-1.6, -0.1, textstr1, transform=ax_eigvals.transAxes, fontsize=FS, bbox=props)
 
             #----------------------

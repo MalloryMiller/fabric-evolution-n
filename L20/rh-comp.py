@@ -186,7 +186,7 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
 def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
     x = 0
     if (ex.exptype == "ss"):
-        x = 4 # gets the diagonal part in the direction of the shear
+        x = 4 # gets the diagonal part of x-y in the direction of the shear
     df = ex.get_dataframe(x)
     df.strain = np.abs(df.strain)
 

@@ -2,7 +2,7 @@ from experiment_generation import GeneratedExperiment, TIMESTEPS
 import threading
 
 
-IMAGE_COUNT = 5
+IMAGE_COUNT = 1
 IMAGES = range(0, TIMESTEPS, round(TIMESTEPS/IMAGE_COUNT))
 
 TEMPS = []
@@ -33,7 +33,7 @@ def run(action, exptypes = EXP_TYPES, temps = TEMPS):
             action(e1)
 
 
-def create_ncs(experiment, remake=False):
+def create_ncs(experiment, remake=True):
     '''
     Creates nc files for the experiment input. 
     By default it does not overwrite preexisting nc files,
@@ -49,7 +49,7 @@ def create_images(experiment):
     By default it does not overwrite a preexisting image folder,
     and if one already exists the function will return after printing a warning.
     '''
-    experiment.load_solution([TIMESTEPS], isolate=True, remake = True)
+    experiment.load_solution([TIMESTEPS], isolate=False, remake = True)
 
 
 def main():
