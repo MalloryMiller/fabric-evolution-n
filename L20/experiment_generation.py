@@ -9,7 +9,6 @@ from math import atan
 from netCDF4 import Dataset
 from utils import *
 
-from specfabpy import specfab as sf
 from specfabpy import integrator as sfint
 from specfabpy import constants as sfconst
 
@@ -261,28 +260,19 @@ class GeneratedExperiment(Experiment) :
 
         for tt in np.arange(0,Nt+1):
 
-            c = nlm[tt,:]
           
+            c = nlm[tt,:]
             
-            
-            if (rectify):
-                 m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-                 if get_vertical_component(m1[tt],m2[tt],m3[tt]) == -1:
-                     print(get_vertical_component(m1[tt],m2[tt],m3[tt]), m1[tt],m2[tt],m3[tt])
-                     print("\n\nMS HERE: ", m1[tt],m2[tt],m3[tt])
-                     print("ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
-                   
-                     adjusted_nlm = sf.rotate_nlm(c, -np.arctan(m1[tt][0]), -np.arctan(m1[tt][1]))
-                     c = adjusted_nlm
+            #if (rectify):
+            #    m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
+            #    c = correct_angle(c)
 
-                     m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')            
-                     print("NEWWWW ANGLES, 0:", np.rad2deg(np.arctan(m1[tt][0])) , "1:", np.rad2deg(np.arctan(m1[tt][1])))
-            
-                     print("NOEWW MS HERE: ", m1[tt],m2[tt],m3[tt])
             
             m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')   
+            
             m1[tt],m2[tt],m3[tt] =  [0,0,1], [0,1,0], [1,0,0]
 
+            
 
             # Linear (n'=1) mixed Taylor--Sachs enhancements            
             Eij_lin[tt,:]  = sf.Eij_tranisotropic(c, m1[tt,:],m2[tt,:],m3[tt,:], Eij_grain_lin, alpha_lin, n_grain_lin)
@@ -732,7 +722,7 @@ class ExperimentReader(csv.DictReader):
             x_ = x[self.found_experiments["Source"] == srcs]
             y_ = y[self.found_experiments["Source"] == srcs]
             temp_ = temp[self.found_experiments["Source"] == srcs]
-
+            print(i, len(srcs))
             plots.append(fig.scatter(x_, y_, label=srcs.replace("&", "\&"), marker=MARKERS[i], s=15,
                                      norm=colors.Normalize(MIN_TEMP, MAX_TEMP), cmap = CMAP_TEMP, c=temp_,
                                      ec="black", lw=.5))

@@ -3,6 +3,8 @@ import pandas as pd
 
 import matplotlib as mp
 import matplotlib.colors as colors
+from specfabpy import specfab as sf
+from rotation_test import *
 
 MAX_TEMP = 0
 MIN_TEMP = -30
@@ -30,7 +32,7 @@ CMAP_STRAIN_RATE = mp.cm.copper
 
 
 MARKERS = ["X", "*", "s", "P", "d","p", 
-           ">", "<", "^", "v",
+           ">", "<", "^", "v"
            ]
 
 
@@ -202,3 +204,4 @@ diag([b**((1+r)/2), b**((1-r)/2), b**(-1)])
 
 def ss_strain(T,angle):
     return (T **( (np.deg2rad(angle) + 1) / 2))
+

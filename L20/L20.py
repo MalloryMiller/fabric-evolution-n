@@ -2,7 +2,7 @@ from experiment_generation import GeneratedExperiment, TIMESTEPS
 import threading
 
 
-IMAGE_COUNT = 1
+IMAGE_COUNT = 3
 IMAGES = range(0, TIMESTEPS, round(TIMESTEPS/IMAGE_COUNT))
 
 TEMPS = []
@@ -49,7 +49,7 @@ def create_images(experiment):
     By default it does not overwrite a preexisting image folder,
     and if one already exists the function will return after printing a warning.
     '''
-    experiment.load_solution([TIMESTEPS], isolate=False, remake = True)
+    experiment.load_solution(IMAGES, isolate=False, remake = True)
 
 
 def main():

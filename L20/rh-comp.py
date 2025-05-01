@@ -91,8 +91,8 @@ def plot_enhancement(ax, fig, Ei, ex, t, slopes, title,
     for x in ex:
         ax_data = generate_plot(ax, Ei, x, t, slopes, use_Eij = use_Eij, cutoff=cutoff, balanced_average = balanced_average)
 
-    if observations != None:
-        observations.plot_values(ax)
+    #if observations != None:
+    #    observations.plot_values(ax)
 
     ax.set_title(title)
     add_slope(ax, slopes[ax])
@@ -276,8 +276,8 @@ def generate_charts_w_ref(use_not_tertiary = False):
         else:
             OBSERVATIONS_READER = ExperimentReader("observed_data.csv")
 
-        OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
-        OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
+        #OBSERVATIONS_READER.found_experiments = OBSERVATIONS_READER.get_experiments(x)
+        #OBSERVATIONS_READER.demonstrative_chart(fname=x + "_observations")
         #OBSERVATIONS_READER.found_experiments.to_csv(x + "_data.csv")
         plot_all_enhancement(scope, time_of_strain, balanced_average="individual", cutoff=False, fname=x, observations = OBSERVATIONS_READER)
         scope = []
