@@ -166,8 +166,47 @@ class GeneratedExperiment(Experiment) :
         p1,p2,p3 = loadvar('p1'), loadvar('p2'), loadvar('p3')
         
 
+
         if self.exptype == "ss":
             steps = np.tan(np.deg2rad(steps))
+            tau = [[0,0,steps], [0,0,0], [steps,0,0]]
+        
+        stress = reverse_glens(steps, self.temp, time_of_strain)
+
+        tau = []
+        tau_base = [[0,0,0], [0,0,0], [0,0,1]]
+        
+        eps = []
+        if self.exptype == "ss":
+            for i in range(TIMESTEPS):
+                tau_base = [[0,0,1], [0,0,0], [1, 0,0]]
+                tau_base[2][0] = stress[i]
+                tau_base[0][2] = stress[i]
+                tau.append(tau_base)
+
+                dimension_of_interest = [0, 2]
+        else:
+            for i in range(TIMESTEPS):
+                tau_base = [[0,0,0], [0,0,0], [0,0,1]]
+                tau_base[2][2] = stress[i]
+                tau.append(tau_base)
+                dimension_of_interest = [2, 2]
+
+
+        for i in range(1, TIMESTEPS):
+            print(tau[i])
+            print(m1,m2,m3)
+            print(Eij_lin[i])
+            print(calc_a(c_to_K(self.temp)))
+            eps.append(sf.rheo_fwd_orthotropic(tau[i], 
+                                               calc_a(c_to_K(self.temp)), 
+                                               3, m1,m2,m3, 
+                                               Eij_lin[i])[dimension_of_interest[0], dimension_of_interest[1]])
+
+
+        #eps = sf.rheo_fwd_orthotropic(tau, calc_a(c_to_K(self.temp)), 3, m1,m2,m3, Eij_lin)
+        
+        #print(eps)
 
         #print(vert[0])
         print(Eij_lin[:,m])
@@ -181,6 +220,8 @@ class GeneratedExperiment(Experiment) :
             "temp": temp,
             "exp": expt,
             }
+        
+        print(Eij_nlin[:,m])
 
         return pd.DataFrame(
 
@@ -262,11 +303,6 @@ class GeneratedExperiment(Experiment) :
 
           
             c = nlm[tt,:]
-            
-            #if (rectify):
-            #    m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')
-            #    c = correct_angle(c)
-
             
             m1[tt,:],m2[tt,:],m3[tt,:], eigvals[tt,:] = sf.frame(c, 'e')   
             

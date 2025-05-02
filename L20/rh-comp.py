@@ -256,7 +256,7 @@ def generate_charts():
 def generate_charts_w_ref(use_not_tertiary = False):
     scope = []
 
-    EXP_TYPE = ["ss", "uc"]
+    EXP_TYPE = ["ss", "uc", "cc", "ue"]
 
     for x in EXP_TYPE:
         for tem in TEMPS:
