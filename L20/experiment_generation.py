@@ -178,35 +178,28 @@ class GeneratedExperiment(Experiment) :
         
         eps = []
         if self.exptype == "ss":
-            for i in range(TIMESTEPS):
+            for i in range(TIMESTEPS+1):
                 tau_base = [[0,0,1], [0,0,0], [1, 0,0]]
                 tau_base[2][0] = stress[i]
                 tau_base[0][2] = stress[i]
                 tau.append(tau_base)
 
-                dimension_of_interest = [0, 2]
+            dimension_of_interest = [0, 2]
         else:
-            for i in range(TIMESTEPS):
+            for i in range(TIMESTEPS+1):
                 tau_base = [[0,0,0], [0,0,0], [0,0,1]]
                 tau_base[2][2] = stress[i]
                 tau.append(tau_base)
-                dimension_of_interest = [2, 2]
+            dimension_of_interest = [2, 2]
 
 
-        for i in range(1, TIMESTEPS):
-            print(tau[i])
-            print(m1,m2,m3)
-            print(Eij_lin[i])
-            print(calc_a(c_to_K(self.temp)))
+        for i in range(TIMESTEPS+1):
             eps.append(sf.rheo_fwd_orthotropic(tau[i], 
                                                calc_a(c_to_K(self.temp)), 
-                                               3, m1,m2,m3, 
-                                               Eij_lin[i])[dimension_of_interest[0], dimension_of_interest[1]])
+                                               3, m1[i],m2[i],m3[i], 
+                                               Eij_lin[i])
+                                               [dimension_of_interest[0], dimension_of_interest[1]])
 
-
-        #eps = sf.rheo_fwd_orthotropic(tau, calc_a(c_to_K(self.temp)), 3, m1,m2,m3, Eij_lin)
-        
-        #print(eps)
 
         #print(vert[0])
         print(Eij_lin[:,m])
@@ -217,6 +210,7 @@ class GeneratedExperiment(Experiment) :
             "linear_enhancement": Eij_lin[:,m], 
             "nonlinear_enhancement": Eij_nlin[:,m], 
             "eigval": eigvals[:,m%3],
+            "E": eps,
             "temp": temp,
             "exp": expt,
             }

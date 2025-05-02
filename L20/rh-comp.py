@@ -49,22 +49,22 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
   
     plot_enhancement(ax_Elin, fig, "nonlinear_enhancement", ex, t, current_slopes, "Nonlinear Sachs", 
                      False, cutoff = cutoff, balanced_average = balanced_average, observations=observations)
-    plot_enhancement(ax_Enlin, fig, "linear_enhancement", ex, t, current_slopes, "Linear mixed Taylor--Sachs", 
-                     False, cutoff = cutoff, balanced_average = balanced_average, observations=observations)
+    plot_enhancement(ax_Enlin, fig, "E", ex, t, current_slopes, "Adjusted Nonlinear Sachs", 
+                     False, cutoff = cutoff, balanced_average = balanced_average, observations=observations, Auto=True)
     plot_enhancement(ax_Elin_E, fig, "nonlinear_enhancement", ex, t, current_slopes, "Nonlinear Sachs", 
                      cutoff = cutoff, balanced_average = balanced_average, observations=observations)
-    plot_enhancement(ax_Enlin_E, fig, "linear_enhancement", ex, t, current_slopes, "Linear mixed Taylor--Sachs", 
-                     cutoff = cutoff, balanced_average = balanced_average, observations=observations)
+    plot_enhancement(ax_Enlin_E, fig, "E", ex, t, current_slopes, "Adjusted Nonlinear Sachs", 
+                     cutoff = cutoff, balanced_average = balanced_average, observations=observations, Auto=True)
 
 
     n_hist(fig, ax_Elin_n_temp, current_slopes[ax_Elin_E],"Nonlinear Sachs")
-    n_hist(fig, ax_Enlin_n_temp, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
+    n_hist(fig, ax_Enlin_n_temp, current_slopes[ax_Enlin_E], "Adjusted Nonlinear Sachs")
 
     n_hist(fig, ax_Elin_n_rate, current_slopes[ax_Elin_E],"Nonlinear Sachs", which_ns = 'avg_st_rate')
-    n_hist(fig, ax_Enlin_n_rate, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs", which_ns = 'avg_st_rate')
+    n_hist(fig, ax_Enlin_n_rate, current_slopes[ax_Enlin_E], "Adjusted Nonlinear Sachs", which_ns = 'avg_st_rate')
 
     extremes_hist(fig, ax_Elin_n_temp_extr, current_slopes[ax_Elin_E],"Nonlinear Sachs")
-    extremes_hist(fig, ax_Enlin_n_temp_extr, current_slopes[ax_Enlin_E], "Linear mixed Taylor--Sachs")
+    extremes_hist(fig, ax_Enlin_n_temp_extr, current_slopes[ax_Enlin_E], "Adjusted Nonlinear Sachs")
 
     os.makedirs("output", exist_ok=True)
     fout = f'output/{fname}.png'
@@ -75,7 +75,8 @@ def plot_all_enhancement(ex, t, cutoff = True, balanced_average = True, fname = 
 
 
 def plot_enhancement(ax, fig, Ei, ex, t, slopes, title, 
-                     use_Eij = True, cutoff = True, balanced_average = True, observations = None):
+                     use_Eij = True, cutoff = True, balanced_average = True, observations = None,
+                     Auto = False):
     results = {
         "ns": [], 
         "temp": [], 
@@ -89,7 +90,7 @@ def plot_enhancement(ax, fig, Ei, ex, t, slopes, title,
     )
 
     for x in ex:
-        ax_data = generate_plot(ax, Ei, x, t, slopes, use_Eij = use_Eij, cutoff=cutoff, balanced_average = balanced_average)
+        ax_data = generate_plot(ax, Ei, x, t, slopes, use_Eij = use_Eij, cutoff=cutoff, balanced_average = balanced_average, Auto=Auto)
 
     #if observations != None:
     #    observations.plot_values(ax)
@@ -128,7 +129,7 @@ def extremes_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     for x in range(bin_count + 1):
         bins.append(min_datas + (x * ((max_datas - min_datas) / bin_count)))
 
-    print("TEMPS", temps)
+    print("E", datas)
 
 
     ax.hist(datas[0], density=True, rwidth=0.95, stacked = False, alpha=.75, color="darkslateblue", label=str(temps[0]) + " °C", bins = bins)
@@ -165,7 +166,7 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
         norm = colors.LogNorm(min_ns, max_ns)
         c_label = AXIS_SCALE + "(Strain Rate x E)"
 
-
+    print(datas)
     h, bins, patches = ax.hist(datas, histtype='bar', rwidth=0.95, stacked = True)
     for i, patch in enumerate(patches):
         for bar in patch:
@@ -183,20 +184,24 @@ def n_hist(fig, ax, ns, Etype, which_ns = 'temp'):
     fig.colorbar(colorbar_colors, ax=ax, label = c_label)
 
 
-def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True):
+def generate_plot(ax, Eij, ex, t, slopes, use_Eij = True, cutoff = True, balanced_average = True, Auto= False):
     x = 0
-    if (ex.exptype == "ss"):
+    if (ex.exptype == "ss" and not Auto):
         x = 4 # gets the diagonal part of x-y in the direction of the shear
     df = ex.get_dataframe(x)
     df.strain = np.abs(df.strain)
 
-    y_ = df.strain / t # strain rate 
-    if use_Eij:
-        ax.set_ylabel(AXIS_SCALE + '(Strain Rate * E)')
-        x_ = reverse_glens(df.strain, ex.temp, t, E=df[Eij])
+    if (Auto):
+        y_ = df.E
+        x_ = reverse_glens(df.strain, ex.temp, t, E=df['nonlinear_enhancement'])
     else:
-        ax.set_ylabel(AXIS_SCALE + '(Strain Rate)')
-        x_ = reverse_glens(df.strain, ex.temp, t)
+        y_ = df.strain / t # strain rate 
+        if use_Eij:
+            ax.set_ylabel(AXIS_SCALE + '(Strain Rate * E)')
+            x_ = reverse_glens(df.strain, ex.temp, t, E=df[Eij])
+        else:
+            ax.set_ylabel(AXIS_SCALE + '(Strain Rate)')
+            x_ = reverse_glens(df.strain, ex.temp, t)
 
     temps = [ex.temp] * len(df.strain)
 
